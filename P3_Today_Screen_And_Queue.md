@@ -6,7 +6,7 @@ The core daily job. The owner opens Today, taps each worker's work option, and i
 
 ## Read first
 - Spec section 4 (Today, per-tap save and Undo), section 6 (daily entry rules, states, day completion) and section 11 (Release 1 connectivity).
-- `docs/screens/Today.png` and the other `Today*.png` screens.
+- `docs/screens/Today.png`, the other `Today*.png` screens and `NeedsReview.png`.
 - `db/schema.sql`: `record_work` (including VOID and `expected_version`), `mark_rest_no_work`, the `day_reviews` table, and the `assignment_balances` view.
 
 ## Build

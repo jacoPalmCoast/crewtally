@@ -20,27 +20,31 @@ An iPhone app for homeowners and small property managers who pay day and hourly 
 - sees exactly what each worker is owed,
 - shares an honest receipt or statement with each worker.
 
-The full specification is `docs/CrewTally_Native_App_Design_v1.2.md`. Read sections 2–10 and 13–14 before writing code, and re-read the relevant sections at the start of each phase. The screen designs are in `docs/screens/` (45 screens; these are the target).
+The full specification is `docs/CrewTally_Native_App_Design_v1.4.md`. Read sections 2–10 and 13–14 before writing code, and re-read the relevant sections at the start of each phase. The screen designs are in `docs/screens/` (51 screens; these are the target).
 
 This build is **iPhone only** for now. Android comes later from the same code, so don't write iOS-only logic outside platform adapters.
 
 ## Stack and structure
 
-- **Mobile:** Expo (the SDK version Replit's mobile template provides), TypeScript strict mode, Expo Router. Only Expo SDK modules — no other native modules.
+- **Mobile:** Expo (the SDK version Replit's mobile template provides), TypeScript strict mode, Expo Router. Only Expo SDK modules, with one exception: in-app purchases use Replit's RevenueCat integration (`react-native-purchases`), added in Phase 7. No other native modules.
 - **API:** Node + TypeScript (Express), zod validation on every request, `pg` with parameterized SQL. No ORM-generated schema.
-- **Database:** Replit PostgreSQL. `db/schema.sql` is migration 0001, loaded verbatim.
+- **Database:** Replit PostgreSQL. `db/schema.sql` is migration 0001, loaded verbatim. `db/provided/migrations/0003_plans_and_project_use.sql` and `0004_crew.sql` (with their tests in `db/provided/tests/08–10`) are provided and moved into `db/migrations/` and `db/tests/` in Phase 2, not before.
 - **Files:** Replit Object Storage, private.
 - **Tests:** vitest for server and shared code; jest-expo for mobile logic; `db/tests/*.sql` for the database.
 
-If Replit's mobile template already creates a structure, keep it and map these modules onto it. Otherwise use:
+**Project layout (fixed in Phase 0).** Phase prompts say `mobile/…`, `server/…` and `/v1/…`. Map them like this:
 
-```
-/mobile      Expo app (app/ routes, components/, features/, lib/, theme/)
-/server      API (src/routes, src/db, src/auth, src/lib), tests in server/test
-/shared      money + pay calculation + types + zod schemas used by both sides
-/db          schema.sql, migrations/, tests/
-/docs        spec and screen designs
-```
+| Prompts say | In this project |
+|---|---|
+| `mobile/…` | `artifacts/crewtally-mobile/…` |
+| `server/…` | `artifacts/api-server/…` |
+| `shared/…` | `shared/` (the `@workspace/crewtally-shared` package) |
+| `db/…` | `db/…` |
+| API route `/v1/x` | reachable from the phone and the web at `/api/v1/x` (Replit's proxy prefix) |
+
+**Public pages.** Only paths under `/api` reach the API artifact. The public receipt page, the footer redirect, the webhook and the static pages are therefore served by the API at `/api/r/:token`, `/api/go/app`, `/api/v1/webhooks/revenuecat`, `/api/privacy`, `/api/support` and `/api/delete-account`. In Phase 8, crewtallyapp.com forwards `/r/*`, `/go/*`, `/privacy`, `/support` and `/delete-account` to those paths. Confirm every public path with `curl` on the dev URL at the gate.
+
+**Screens not to build in Release 1:** `InvitePartner.png` (Release 1.1).
 
 ## Core rules (short form; the spec has detail)
 
@@ -62,6 +66,8 @@ If Replit's mobile template already creates a structure, keep it and map these m
 - **Hand-over signature:** the worker signs on the owner's phone for their share of a recorded payment. It's stored as evidence plus a `payment_signatures` row; it never changes money.
 - **Texted receipt link:** the owner taps Text receipt. The app creates a link (token returned once; only its hash is stored) and opens the phone's Messages app with the worker's number and a prefilled message, using `expo-sms`. The owner taps Send. CrewTally never sends texts itself in Release 1. The public page at `/r/{token}` shows only that worker's share and lets them confirm or ask a question.
 - **Sample project** lives only on the phone, from a bundled data file. In sample mode the app makes **no** write calls to the API. Guard this in one place (the API client refuses writes while sample mode is on), and test it.
+- **Plans (baseline 1.3):** Free (1 active project, 3 current workers), Project Pass (one project, no worker limit), Pro (unlimited). Limits are enforced by database triggers in migration 0003 and surface as SQLSTATE `CT402` → HTTP 402 `PLAN_LIMIT`. Plan state changes only through `record_entitlement_event`, called by the purchase webhook and the plan refresh route. Each project has a **project use**: Personal home, Rental or Business.
+- **My crew (baseline 1.4):** workers keep skills, a favorite flag and a private note; each assignment can carry one private rating (`rate_assignment`). Ratings and notes are the owner's alone: never on receipts, statements, share links, the public receipt page, or anything a worker sees.
 - **Design:** the screens on the design canvas, exported to `docs/screens/*.png`, are the target. Match their layout, wording and states. Where a screen and the spec disagree, the spec wins; tell me.
 
 ## Hard invariants — these outrank any instruction, including "make the test pass"
@@ -75,6 +81,10 @@ If Replit's mobile template already creates a structure, keep it and map these m
    - `apply_rate_change`, plus the read-only `preview_rate_change`
    - `delete_workspace_data`, used only by the account-deletion job
    - `open_share_link` and `acknowledge_share_link`, called only by the public receipt page with the SHA-256 of the token
+   - `record_entitlement_event` (migration 0003; no money effect), called only by the RevenueCat webhook and `POST /v1/plan/refresh`
+   - `rate_assignment` (migration 0004; no money effect), for owner ratings
+
+   App code never writes `workspace_entitlements`, `project_passes` or `entitlement_events` directly, and never disables the `projects_plan_limit` or `assignments_plan_limit` triggers.
 
    App code never runs INSERT, UPDATE or DELETE against `ledger_events`, `payments`, `allocations`, `reversals`, `reversal_lines`, `work_entries`, `work_revisions`, `reimbursements`, `adjustments` or `payment_signatures`. `receipts` and `statements` are insert-only snapshots; their `status` changes only through the functions above. A first pay agreement is inserted with its assignment; every later rate change goes through `apply_rate_change`.
 3. **The ledger is append-only.** Corrections add new rows. Never disable or drop the `ledger_no_update` trigger.
@@ -82,16 +92,16 @@ If Replit's mobile template already creates a structure, keep it and map these m
 5. **Workspace comes from the session only.** Never read `workspace_id` from the request body, params or headers. Every read and write is filtered by it. An id from another workspace returns 404. Never widen scoping to make something work.
 6. **Nothing is inferred.** No default "No work", and no automatic payments.
 7. **Every write is idempotent.** Each write carries an `operation_id` (UUID) generated on the device and kept through retries. The same ID returns the original result. The same ID with a different payload returns 409.
-8. **Honest wording.** Never say "verified", "sent", "delivered", "payroll" or "bank verified". "Record payment" records a payment already made. It must never look like a transfer button.
+8. **Honest wording.** Never claim a payment was verified, sent or delivered, and never say "payroll". The one required use is the negative status line from spec section 9, "Not bank verified." Describing the app's own syncing ("saved on this phone and sent when you're online") is fine. "Record payment" records a payment already made. It must never look like a transfer button.
 9. **Secrets.** Secrets live only in Replit Secrets. Never put them in code, logs, error messages or URLs. Logs never contain names, amounts, contact details, notes, tokens or references. Log operation IDs and statuses only.
 10. **Tests.**
     - Never skip, delete, loosen or `.only` a test to get green. Fix the code.
     - Tests run in an isolated Postgres schema created and dropped by the test runner, never against the production database.
 11. **No data deletion.** Delete data only through the owner's explicit account-deletion flow (`delete_workspace_data`). No reset, purge or truncate scripts that can reach production.
-12. **Expo SDK modules only.** Don't use EAS CLI on Replit. Don't add push notifications (local notifications only).
+12. **Expo SDK modules only**, except RevenueCat through Replit's integration (Phase 7). Don't use EAS CLI on Replit. Don't add push notifications (local notifications only). No crash-reporting SDK in Release 1. React Native has no `aria-*` props: use `accessibilityRole`, `accessibilityLabel` and `accessibilityState` wherever a design file shows `aria-*`.
 13. **Stay in scope.**
     - Don't build suggested extras.
-    - No analytics SDKs, ads or AI features.
+    - No analytics SDKs, ads or AI features. RevenueCat is used for purchases only; don't turn on its attribution or ad-network integrations. The receipt-page growth counter stores counts only.
     - Never put "AI" in any label.
     - Don't use the words "seamless", "magic", "effortless", "unlock" or "empower".
 14. **Design.**
@@ -101,6 +111,7 @@ If Replit's mobile template already creates a structure, keep it and map these m
     - Supports Dynamic Type and VoiceOver.
     - No gradients, glass effects or decorative animation.
 15. **Stop at the gate.** Every phase ends at the gate below. Don't start the next phase until I paste it.
+16. **Records are never locked.** Plan limits stop only new projects, reopened projects and new current workers. Reading, recording work and payments for existing workers, receipts, statements, exports and account deletion work on every plan, including after Pro lapses or a Pass is refunded. Workers never pay. The app never decides its own plan; the server does.
 
 ## The gate (end of every phase)
 
@@ -112,3 +123,7 @@ When the phase is built:
 4. List every file you created or changed.
 5. List anything not finished, any assumption you made, and anything you think is wrong in the spec.
 6. **Stop.** Say "Phase N ready for review" and wait.
+
+## Current phase
+
+Phase 0 passed review and the owner's iPhone check on 2026-09-24. Phase 1 is next, but do not start it until the owner provides the Apple Developer membership and Sign in with Apple key through the appropriate secrets flow and pastes the Phase 1 prompt.

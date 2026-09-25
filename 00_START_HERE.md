@@ -2,7 +2,7 @@
 
 This pack drives Replit Agent through the Release 1 build of the CrewTally, **iPhone only**, then publishes to TestFlight and the App Store with Replit's publish flow. Android follows later from the same code.
 
-Source of truth: `docs/CrewTally_Native_App_Design_v1.2.md` (the spec). Where this pack and the spec differ, this pack wins for the iPhone build; the differences are listed at the bottom.
+Source of truth: `docs/CrewTally_Native_App_Design_v1.4.md` (the spec, baseline 1.4). Where this pack and the spec differ, this pack wins for the iPhone build; the differences are listed at the bottom.
 
 ## What's in the pack
 
@@ -12,9 +12,11 @@ Source of truth: `docs/CrewTally_Native_App_Design_v1.2.md` (the spec). Where th
 | `P0_Foundation.md` … `P8_Release_TestFlight_AppStore.md` | One prompt per phase. Paste one at a time. |
 | `PM_Migration_From_Web_App.md` | Optional. Moves your records from the current web app once you have an export. |
 | `db/schema.sql` | The ledger schema and **every money-writing function**, already written and tested: work entry, mark rest, payments, reversals, checks, corrections, reimbursements, adjustments, rate changes with preview, and account deletion. Loaded verbatim; the Agent calls these and never writes its own. It supersedes Appendix A in the spec. |
-| `db/tests/01–05*.sql`, `db/run_db_tests.sh` | Database tests (pay vectors, ledger sequence, idempotency, isolation, checks, partial refunds, corrections, rate changes, mark rest, deletion) and the runner that uses a throwaway schema. All pass on PostgreSQL 16. |
+| `db/provided/migrations/0003_plans_and_project_use.sql` | Baseline 1.3: plans (Free, Project Pass, Pro), plan-limit triggers, store-event recording, project use, IRS figures by year, receipt-page counter. Loaded verbatim in Phase 2. |
+| `db/provided/migrations/0004_crew.sql` | Baseline 1.4: My crew — skills, favorites, private notes, per-project ratings, the crew summary view and last-rate prefill. Loaded verbatim in Phase 2. |
+| `db/tests/01–07*.sql`, `db/provided/tests/08–10*.sql`, `db/run_db_tests.sh` | Database tests (pay vectors, ledger sequence, idempotency, isolation, checks, partial refunds, corrections, rate changes, mark rest, deletion, payouts, signatures, links, plans and year-end tax figures, crew and ratings, plan-limit hardening) and the runner that uses a throwaway schema. All pass on PostgreSQL 16. |
 | `shared/pay.ts`, `shared/money.ts`, `shared/pay_test_vectors.json` | Pay preview and amount parsing in TypeScript, integer math only, tested against the same vectors as the database. |
-| `docs/` | The spec (baseline 1.2) and all 45 screen designs as images (`docs/screens/`). |
+| `docs/` | The spec (baseline 1.4) and all 51 screen designs as images (`docs/screens/`). |
 | `VALIDATION_SESSIONS.md` | A 20-minute script for showing the screens to 3–4 real owners before Phase 3. |
 | `GATE_CHECKLIST_AND_QA_LOG.md` | The gate you run at the end of every phase, and the log you keep. |
 | `APP_STORE_CHECKLIST_iOS.md` | Everything Apple needs before you press submit. |
@@ -26,8 +28,27 @@ Source of truth: `docs/CrewTally_Native_App_Design_v1.2.md` (the spec). Where th
 3. **Sign in with Apple key.** In your Apple Developer account, create a Sign in with Apple key (.p8) and note the Key ID and Team ID. The server needs these to revoke tokens when an account is deleted (Apple requires this). You add them in Phase 1 as Replit Secrets.
 4. **Privacy policy and support page.** Two simple web pages on any domain. Needed in Phase 8.
 5. **Expo Go** on your iPhone, for testing every phase on a real device.
+6. **Selling plans:** enroll in the **App Store Small Business Program** as soon as your membership is active (15% instead of 30%; the lower rate starts about two weeks after approval). Create a free RevenueCat account when the Agent asks in Phase 7 (purchases are simulated in Expo Go, so no products are needed yet). In Phase 8, sign the Paid Apps agreement, add banking and tax details and create the products in App Store Connect.
 
 Inputs you owe the build (fill these in `01_PROJECT_BRIEF_AND_INVARIANTS.md` before pasting): app name, bundle ID, payer display name default, privacy policy URL, support URL.
+
+## What's new in baseline 1.3 (25 September 2026)
+
+- **Plans:** Free (1 active project, 3 current workers), Project Pass ($24.99 per project), Pro ($7.99/month or $49.99/year), sold with Apple in-app purchase through Replit's RevenueCat integration. Phase 2 lays the groundwork (limits, plan screen); Phase 7 adds buying.
+- **Records are never locked** on any plan (invariant 16).
+- **Project use** (Personal home, Rental, Business) and **IRS figures by year** on year-end totals (Phase 2 field, Phase 5 screen).
+- **Receipt page footer** "Kept with CrewTally — free for homeowners", counted with no personal data (Phase 6).
+- Migration numbers: plans `0003` and crew `0004` (both provided, Phase 2), receipts and statements `0005` (Phase 6), deletion jobs and alerts `0006` (Phase 7).
+- Evidence behind these choices: `docs/CrewTally_pricing_and_features_validation.md`.
+
+## What's new in baseline 1.4 (25 September 2026)
+
+- **My crew** replaces the Workers tab (tab label "Crew"): every worker you've ever had, searchable by name or skill, with Favorites, Working now and Past filters.
+- **Skills, favorites and a private note** per worker; **a private rating per project** (1–5 stars, would hire again, note), asked when a project is archived.
+- **Hire again:** Call, Text and Add to a project, prefilled with the worker's last rate; the text opens Messages in the worker's language.
+- **Add from Contacts** through the system contact picker.
+- Ratings and notes are private: never on receipts, statements, links or anything a worker sees. Saved and past workers never count toward the Free plan.
+- Screens: `docs/screens/` now has 51 designs, including AddWorker, HireAgain, RateWorker, Plan, PlanPro and LimitSheet.
 
 ## How to run each phase
 
@@ -57,7 +78,7 @@ If the Agent stalls or loops: stop it, reload, and paste the last instruction ag
 
 About 7 weeks to App Store submission. These are estimates, not commitments; re-estimate after P1.
 
-## Differences from the v1.1 spec for this build
+## Differences from the spec for this build
 
 | Spec v1.1 | iPhone-first Replit build |
 |---|---|

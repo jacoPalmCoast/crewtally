@@ -14,7 +14,7 @@ After recording a payment, the owner shares an honest receipt that shows the wor
 ### Server — snapshots
 - `POST /v1/receipts` takes `{payment_id}`.
   - Load the payment at its **current version**. If a receipt row for (`payment_id`, `version`) exists, return it. Otherwise insert one with an immutable `snapshot` JSON:
-    - `receipt_no` (formatted `R-000123`), `generated_at` (UTC ISO), `payment_date`, `payer_display_name` (from workspace settings; add `payer_display_name text` to `workspaces` in migration `0003`), `recipient_label`, `method`, `reference`.
+    - `receipt_no` (formatted `R-000123`), `generated_at` (UTC ISO), `payment_date`, `payer_display_name` (from workspace settings; set in Phase 2 under More → Account), `recipient_label`, `method`, `reference`.
     - `project_names`.
     - `allocations`: worker id and name, project, `amount_minor`, unreversed amount.
     - `status`: RECORDED / PARTLY_REVERSED / REVERSED / CORRECTED, plus clearance.
@@ -26,7 +26,7 @@ After recording a payment, the owner shares an honest receipt that shows the wor
   - **FULL view:** everything. The client must send `confirm_full=true`. The UI only offers FULL for the named recipient.
   - Never send the full snapshot to the client for a worker view. The filtering happens on the server.
 - `POST /v1/statements` takes `{worker_id, project_id?, from, to}`. It inserts an immutable snapshot containing:
-  - `statement_no` (`S-000041`; add `statement_seq` to `workspaces` in migration `0003`) and `generated_at`.
+  - `statement_no` (`S-000041`; add `statement_seq` to `workspaces` in migration `0005`) and `generated_at`.
   - The worker's name, projects, `from` and `to`.
   - `opening_minor`.
   - `days`: every **work day** in the range per assignment, each with date, input description, rate and earned. Days with no entry are `{status:"NOT_RECORDED"}`, never zero.
@@ -117,7 +117,7 @@ After recording a payment, the owner shares an honest receipt that shows the wor
 - `DELETE /v1/links/:id` revokes a link. `GET /v1/payments/:id` now includes each link's texted, opened and acknowledgment state.
 
 ### Public receipt page
-Served by the same Replit deployment at `https://crewtallyapp.com/r/:token`. Point the domain at the deployment in Phase 8; until then use the Replit dev URL.
+Served by the API at `/api/r/:token` (see "Public pages" in `replit.md`). `token_url` uses `PUBLIC_BASE_URL` + `/r/` + token; `PUBLIC_BASE_URL` is the dev URL + `/api` until Phase 8, then `https://crewtallyapp.com` (which forwards `/r/*` to the API).
 
 - `GET /r/:token`: hash the token and call `open_share_link`. Render a small server-side HTML page from the receipt snapshot, **filtered to that worker**, in the link's language with an English · Español switch.
   - No JavaScript framework, no third-party scripts, no analytics.
@@ -146,6 +146,24 @@ Served by the same Replit deployment at `https://crewtallyapp.com/r/:token`. Poi
   - A question without a note is refused.
   - The ledger is unchanged throughout.
 - **Rate limit:** the 31st request in a minute gets 429.
+
+## Additions in baseline 1.3 (build these in this phase)
+
+### Receipt page footer, counted
+- At the bottom of the public receipt page, in small muted text: "Kept with CrewTally — free for homeowners" (es: "Registrado con CrewTally — gratis para propietarios"; add both to the translation files and flag for the fluent-speaker check).
+- It links to `/go/app` on the same domain. **Never** put the receipt token or any id in that link.
+- `GET /r/:token` calls `bump_growth_counter('RECEIPT_PAGE_VIEW')` only when the page renders (not on the 404 page).
+- `GET /go/app` calls `bump_growth_counter('RECEIPT_FOOTER_TAP')` and redirects (302) to the URL in the `APP_STORE_URL` setting; until the app is live that is `https://crewtallyapp.com`. No cookies, no query strings kept, same rate limit as `/r`.
+- Diagnostics (owner-only) doesn't show these counts; they're for you in the database.
+
+### Tests
+- The footer link contains no token (search the HTML); a rendered page adds one view; the 404 page adds none; `/go/app` adds one tap and returns 302 (T56). Check both with `curl` against the dev URL at `/api/r/…` and `/api/go/app`.
+
+## Additions in baseline 1.4
+
+### Tests
+- Give a worker a private note, skills and a rating, then generate a receipt, a statement, a texted link (`message_text`), the public receipt page, the hand-over sentence and the hire-again message. Search every one: none of the note, skills, rating, stars or would-hire value appears (T65).
+- Receipt and statement templates accept only the snapshot type, never a worker or crew object (enforce with the TypeScript type).
 
 ## Proof to paste at the gate
 - The server-side view filter function.

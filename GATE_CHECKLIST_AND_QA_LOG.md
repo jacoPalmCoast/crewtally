@@ -6,7 +6,7 @@ Run this at the end of every phase. A phase isn't done until every box is ticked
 - [ ] The Agent pasted `npm run test` output: DB, server and mobile suites, with counts and zero failures.
 - [ ] The Agent restarted the API and Expo, and pasted clean startup lines.
 - [ ] No test was skipped, deleted, loosened or marked `.only`. Ask: "List any test you changed or removed in this phase and why."
-- [ ] `db/tests/01`–`05` still pass unchanged.
+- [ ] Every provided test in `db/tests/` still passes unchanged (01–07, plus 08–10 from Phase 2).
 
 ## 2. Proof, not prose
 - [ ] Every item in the phase's "Proof to paste" section is pasted as real code or output.

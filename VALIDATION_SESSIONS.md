@@ -14,7 +14,8 @@ Twenty minutes each with three or four people who pay day or hourly workers. Aim
 4. **Proof** (3 min). "Get proof that Marco got his cash." Hand them the phone for the hand-over screen.
 5. **Send a record** (2 min). "Send Dee a receipt for what you paid her." Then ask: "Would you be OK with Dee seeing this?"
 6. **What it cost** (2 min). "How much has the kitchen cost you in labor so far?"
-7. **Wrap-up** (2 min). "What would stop you using this? What's missing? Would you pay for it, and how: monthly, once, or per project?"
+7. **Finding workers again** (2 min). "When you start a new project, how do you find the workers you used before? Would you rate them, and would you want that kept private?" Then show My crew and the rating sheet.
+8. **Wrap-up** (2 min). "What would stop you using this? What's missing? Would you pay for it, and how: monthly, once, or per project?"
 
 ## What to write down
 

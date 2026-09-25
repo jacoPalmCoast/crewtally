@@ -7,6 +7,15 @@ Checked against Apple's published requirements on 24 September 2026. Recheck eve
 - [ ] Bundle ID registered and matching `ios.bundleIdentifier`. It can't change later.
 - [ ] Sign in with Apple capability enabled for the App ID.
 - [ ] Sign in with Apple key (.p8) created; Key ID and Team ID stored as Replit Secrets.
+- [ ] Paid Apps agreement signed; banking and tax details complete.
+- [ ] App Store Small Business Program approved (15% commission).
+
+## In-app purchases
+- [ ] `pro_monthly`, `pro_annual` (one subscription group) and `project_pass` (consumable) created, priced, with review screenshots, and attached to the version being submitted. Drop `project_pass` if the TestFlight purchase test failed.
+- [ ] Plan screen shows price, period, what's included, that subscriptions renew automatically until cancelled, links to the privacy policy and terms of use (Apple's standard EULA is fine), and **Restore purchases**.
+- [ ] Buying, restoring, expiry and the Project Pass tested in TestFlight with a sandbox tester.
+- [ ] Deleting the account tells the owner it doesn't cancel an App Store subscription and links to manage it.
+- [ ] Records stay readable and usable after a subscription expires (Apple reviewers sometimes check what's lost).
 
 ## Build
 - [ ] Built with Xcode 26 and the iOS 26 SDK. Apple has required this for uploads since 28 April 2026. Replit's publish flow builds it; check the build details in App Store Connect show SDK 26.
@@ -37,7 +46,8 @@ Checked against Apple's published requirements on 24 September 2026. Recheck eve
 ## App Privacy details ("nutrition label"), matching the build
 - [ ] **User content:** worker names, notes, photos and PDFs the owner adds. Linked to the user, used for app functionality, not tracking.
 - [ ] **Identifiers:** Sign in with Apple user ID. Linked to the user, used for app functionality.
-- [ ] **Diagnostics:** crash data, only if crash reporting was added in Phase 8. Not linked to the user, if that's how it's configured.
+- [ ] **Purchases:** purchase history (through Apple and RevenueCat). Linked to the user, used for app functionality, not tracking.
+- [ ] **Diagnostics:** none (no crash-reporting SDK in Release 1).
 - [ ] No tracking, no advertising data, no data sold.
 - [ ] If anything in the build differs from this list, the label follows the build, not this list.
 

@@ -13,7 +13,7 @@ The API runs as a production deployment on Replit with its own database. The iPh
 
 ### Domain for receipt links
 - In the Replit deployment settings, connect `crewtallyapp.com` as a custom domain (add the DNS records Replit shows at your domain registrar) and confirm HTTPS works.
-- The same deployment serves `/r/:token` (receipt pages) and simple static pages at `/privacy`, `/support` and `/delete-account`. Write those three pages in plain HTML now; App Store Connect needs their URLs.
+- The API serves `/api/r/:token` (receipt pages), `/api/go/app` and simple static pages at `/api/privacy`, `/api/support` and `/api/delete-account`; point crewtallyapp.com's `/r/*`, `/go/*`, `/privacy`, `/support` and `/delete-account` at them. Write those three pages in plain HTML now; App Store Connect needs their URLs.
 
 ### Production API
 - Deploy `/server` as a Replit **Reserved VM** deployment. It's always on, so there are no cold starts for the phone.
@@ -49,10 +49,25 @@ The API runs as a production deployment on Replit with its own database. The iPh
   - Recording a payment takes under 2 s.
 
   Measure the timings and record the actual numbers in the gate notes.
-- Crash reporting: add Sentry for React Native (Expo-compatible), or skip it if it needs a non-Expo native module on Replit and say so. If added:
-  - scrub request bodies and breadcrumbs of names and amounts;
-  - no user identifiers beyond the workspace support ID.
+- Crash reporting: none in Release 1 (it needs a native module outside the Expo SDK). Rely on server logs with correlation IDs.
 - Restore rehearsal: run `scripts/restore_rehearsal.sh` against the latest production backup into a throwaway target, and paste the output.
+
+### In-app purchase setup (you, before the first paid build)
+1. App Store Connect → Business: sign the **Paid Apps** agreement; add banking and tax details.
+2. Enroll in the **App Store Small Business Program** (developer.apple.com/app-store/small-business-program). The 15% rate starts about two weeks after approval, so do this early.
+3. App Store Connect → CrewTally → Subscriptions: create group "CrewTally Pro" with `pro_monthly` ($7.99) and `pro_annual` ($49.99). In-App Purchases: create `project_pass` (Consumable, $24.99). Add a review screenshot and description to each.
+4. Connect App Store Connect to RevenueCat (in-app purchase key), set the entitlement `pro` on both Pro products, and set the webhook URL to `https://crewtallyapp.com/api/v1/webhooks/revenuecat` with the `REVENUECAT_WEBHOOK_AUTH` value as the Authorization header.
+5. Create a Sandbox tester account in App Store Connect → Users and Access.
+
+### Purchase test in TestFlight (decides the Project Pass)
+- Buy Pro monthly with the sandbox tester. The Plan screen shows Pro within a minute; the webhook row exists.
+- Delete the app, reinstall, sign in, tap **Restore purchases**: Pro returns.
+- Buy a Project Pass, create a second project with it, add five workers.
+- Let the sandbox subscription expire (sandbox renewals are minutes long): recording work on existing workers still works; a new project shows the limit sheet.
+- **If any Project Pass step fails and can't be fixed in this phase**, set `PROJECT_PASS_ENABLED=false` (server setting read by `GET /v1/plan`; the app hides the Pass everywhere), remove `project_pass` from the submission, and note the decision in the QA log. Launch with Free and Pro.
+
+### Release gates, iPhone only
+Apply spec section 17's release gates to iPhone only: ignore the Android phone and Play closed-test items. "Deletion on the web" means the `/delete-account` page explaining how to delete in the app or by emailing support.
 
 ### TestFlight pilot (at least 5 owners, 2 weeks, per spec release gates)
 1. Publish through Replit's mobile publish flow to TestFlight.
@@ -64,7 +79,7 @@ The API runs as a production deployment on Replit with its own database. The iPh
 Complete every item in `APP_STORE_CHECKLIST_iOS.md`, then submit.
 
 Review notes for Apple:
-> "Sign in with Apple is the only sign-in method. The quickest way to see the app: after signing in, tap 'Look around first' to open a sample project with data (nothing is saved). To try it for real: create a project, add a worker with a daily rate, tap Full on the Today tab, then tap 'Pay what's owed'. The app records payments made outside the app; it does not move money. Account deletion: More → Account → Delete account."
+> "Sign in with Apple is the only sign-in method. The quickest way to see the app: after signing in, tap 'Look around first' to open a sample project with data (nothing is saved). To try it for real: create a project, add a worker with a daily rate, tap Full on the Today tab, then tap 'Pay what's owed'. The app records payments made outside the app; it does not move money. Account deletion: More → Account → Delete account. Plans: Free covers 1 active project and 3 workers; Pro and a one-time Project Pass are sold with in-app purchase from More → Plan, and every record stays available on every plan."
 
 ## Proof to paste at the gate
 - The production deploy config.

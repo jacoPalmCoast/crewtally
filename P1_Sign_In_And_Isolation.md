@@ -51,7 +51,9 @@ The owner signs in with Apple on the iPhone. The server verifies the Apple ident
 | `auth_tag` | bytea |
 | `updated_at` | timestamptz |
 
-Also add a foreign key from `workspaces.owner_id` to `users(id)`.
+Don't add a foreign key from `workspaces.owner_id` to `users(id)`: the provided database tests create workspaces without users. Enforce the link in code (sign-in creates the user and the workspace in one transaction).
+
+Also add `payer_display_name text` to `workspaces` in this migration (the name shown as "Paid by" on receipts and in messages; Phase 2 adds the setting).
 
 Don't store the Apple email or name. Request no scopes. The app doesn't need them.
 
@@ -75,7 +77,7 @@ Don't store the Apple email or name. Request no scopes. The app doesn't need the
   - Reads `Authorization: Bearer <token>` and looks up the hash.
   - Rejects missing, unknown, revoked or expired sessions with 401 `SESSION_EXPIRED`.
   - Sets `req.ctx = {userId, workspaceId}`.
-  - All `/v1` routes except `/v1/health` and `/v1/auth/*` use it.
+  - All `/v1` routes except `/v1/health`, `/v1/auth/*` and, from Phase 7, `/v1/webhooks/revenuecat` use it. The public pages (`/r`, `/go`, static pages) are outside `/v1` and never use it.
 - `GET /v1/me` returns `{workspace:{id, name, currency, locale}, user:{id}}`.
 - `POST /v1/auth/signout` sets `revoked_at` on the session.
 - Rate-limit `/v1/auth/*` to 10 requests per minute per IP.
@@ -118,7 +120,7 @@ Don't store the Apple email or name. Request no scopes. The app doesn't need the
 ## Try it on your phone
 - Sign in with Apple in Expo Go. You land on the tabs.
 - Kill the app and reopen it. You're still signed in.
-- Sign out, then sign in again. You get the same workspace (More → Diagnostics shows the same workspace ID).
+- Sign out, then sign in again. You get the same workspace (More → Diagnostics shows the first 8 characters of the workspace ID; add that line to Diagnostics in this phase).
 
 ## End of phase
 Run the gate from `replit.md`. Stop and say "Phase 1 ready for review".

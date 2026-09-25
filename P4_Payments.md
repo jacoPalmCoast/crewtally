@@ -37,7 +37,7 @@ The owner records a payment already made outside the app, splits it across worke
   - **Advance warning** per line: "Worker B will be $20.00 in advance after this payment."
   - **On Record:**
     1. Run the duplicate check. If there are matches, show "Looks like payment R-000118 on the same date for the same amount. Record anyway?"
-    2. Show the confirmation sheet with one checkbox matching the method ("Money was sent" / "Cash handed over" / "Check issued"), then **Record payment**.
+    2. Show the confirmation sheet with one checkbox matching the method ("Transfer made" / "Cash handed over" / "Check issued"), then **Record payment**.
   - The `operation_id` is created when the form opens and reused on every retry, so a double tap records one payment (T20).
   - Offline, the Record button is disabled with "Needs a connection". The draft stays in the form, and leaving asks Keep draft or Discard. Keep the draft in local storage per form; no server-side drafts.
 - **Payment detail:**
@@ -52,7 +52,7 @@ The owner records a payment already made outside the app, splits it across worke
     - **Reverse payment** (full, reason)
     - **Partial refund** (per-line amounts capped at the unreversed amount, reason)
     - **Correct payment** (reopens the form prefilled; explains "The original stays on record as corrected")
-- **Today:** "Review payments for today" now opens the payment list filtered to that date, with **Record payment** and **No payments today** buttons. Recording a payment for that date marks the day reviewed.
+- **Today:** beside **No payments today** (from Phase 3), add a **Payments this day** link that opens the payment list filtered to that date. Recording a payment for that date marks the day reviewed. **Pay what's owed** now opens the real payout screen.
 - **Worker detail:** balances now come from `/v1/balances`. **Record payment** is prefilled with that worker.
 
 ### Tests
@@ -119,6 +119,11 @@ The owner records a payment already made outside the app, splits it across worke
   - A second signature for the same worker and payment returns 409.
 - **Signature queue:** created offline, sent once after reconnect, and not sent while the payment is still pending (T43).
 - **Translations:** every key in `documents.en.json` exists in `documents.es.json`, with no empty values.
+
+### Test ID tags
+- The offline Record-payment behaviour above (disabled with the reason, draft kept) is T31.
+
+- The advance warning is T16.
 
 ## Proof to paste at the gate
 - The `POST /v1/payments` handler and zod schema.

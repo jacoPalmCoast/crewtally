@@ -1,10 +1,32 @@
 # Native mobile app design specification
 
-Product and engineering baseline 1.2 | 24 September 2026
+Product and engineering baseline 1.4 | 25 September 2026
 
 This app gives homeowners and small property managers a clear record of who worked on each project, what each person earned, what was paid, and what is still owed. Workers can be paid by the day or by the hour. The owner records work in seconds, records payments made outside the app, and shares an honest record with each worker: a payment receipt, or a statement of days worked and balance owed.
 
 CrewTally ships as a native app built with Expo (React Native), backed by a Postgres database that holds the authoritative ledger. **Current build route:** iPhone first, built on Replit with Replit Agent and published to the App Store through Replit's publish flow; Android follows from the same code. The Replit build pack (separate) carries the phase-by-phase build; this spec is its source of truth.
+
+## What's new in baseline 1.4
+
+| Area | Baseline 1.3 | Baseline 1.4 |
+|---|---|---|
+| Workers tab | A list of current workers and balances | **My crew** (tab "Crew"): every worker you've had, searchable by name or skill; filters for Favorites, Working now and Past |
+| Worker profile | Name, contact, language | Adds **skills**, a **favorite** star and a **private note** |
+| After a project | Archive only | Archiving asks **how each worker did**: 1–5 stars, would hire again (Yes, Maybe, No), a note. Private to the owner |
+| Finding people again | Scroll and remember | **Call**, **Text** and **Add to a project** from the worker's page, prefilled with their last rate; the text goes out in the worker's language |
+| Adding workers | Typed in | **Choose from Contacts** through the system picker (no address-book access) |
+| Plan limits | Current workers count | Unchanged: saved and past workers never count toward Free |
+
+## What's new in baseline 1.3
+
+| Area | Baseline 1.2 | Baseline 1.3 |
+|---|---|---|
+| Pricing | Proposal; free during pilot | **Plans decided for Release 1** (section 19): Free (1 active project, 3 current workers), **Project Pass** $24.99 per project, **Pro** $7.99/month or $49.99/year. Apple in-app purchase through Replit's RevenueCat integration |
+| Plan limits | None | Enforced in the database by triggers. Limits stop only new projects, reopened projects and new current workers. **Records are never locked** on any plan |
+| Project use | Not recorded | Each project is **Personal home**, **Rental** or **Business**. It decides the tax wording on year-end totals |
+| Year-end totals | Net paid per worker, no tax wording | Adds IRS figures per year from a table: 1099-NEC ($600 for 2025, $2,000 from 2026) shown only for Rental and Business projects; a household-employee notice for Personal home projects near $3,000 (2026). No tax IDs collected |
+| Receipt page | Receipt only | Adds a small footer, "Kept with CrewTally — free for homeowners", counted without personal data |
+| Evidence base | Opinion | Pricing and features checked against market, store-rule and IRS research (25 September 2026); see references |
 
 ## What's new in baseline 1.2
 
@@ -99,6 +121,9 @@ The launch audience is people who pay workers directly for work on a property: h
 | REQ-21 Sample project | Look around with sample data before real setup | Sample data never reaches the server | 1 |
 | REQ-22 Year-end totals | Net paid per worker per calendar year, all projects | Ties to payments minus reversals | 1 |
 | REQ-23 Partner access | A second person records work and payments | Every action attributed to who did it | 1.1 |
+| REQ-24 Plans | Free, Project Pass and Pro through Apple in-app purchase | Limits enforced in the database; records never locked; restore works | 1 |
+| REQ-25 Project use and tax figures | Personal home, Rental or Business per project; IRS figures by year on year-end totals | 1099 wording only for Rental and Business; figures come from a dated table | 1 |
+| REQ-26 My crew | Every worker kept with skills, favorites, private notes and per-project ratings; hire again from their page | Ratings never reach anything a worker sees; saved workers never count toward Free | 1 |
 
 ## Release scope
 
@@ -114,10 +139,14 @@ The launch audience is people who pay workers directly for work on a property: h
 | Local reminders | | |
 | Ledger, work history, CSV export, **project summary**, **year-end totals** | | |
 | Sign in with Apple, account deletion, data export, **sample project** | | |
+| **Plans**: Free, Project Pass, Pro (Apple in-app purchase) | Web checkout (US only), if in-app sales underperform | Materials and other costs per project (if interviews confirm) |
+| **Project use** and IRS figures on year-end totals | | Loans and advances repaid in installments (if interviews confirm) |
+| Receipt page footer, counted | Spanish owner app | Taxpayer ID capture (after a security review) |
+| **My crew**: skills, favorites, private notes, ratings, hire again, **Contacts picker** | | Recommending a worker to another owner (only with the worker's agreement) |
 
 ## Out of scope
 
-Payroll, tax withholding or tax forms, bank connections, automatic transfers, invoices, materials purchasing, and time-clock attendance tracking. A note can describe the day's tasks but never changes pay.
+Payroll, tax withholding, preparing or filing tax forms, collecting taxpayer IDs (Release 1), bank connections, paying workers through the app, GPS clock-in, ads, automatic transfers, invoices, materials purchasing, and time-clock attendance tracking. A note can describe the day's tasks but never changes pay.
 
 ## Permissions
 
@@ -133,6 +162,9 @@ The owner manages every record in the workspace. A worker needs no account; they
 | Stability | At least 99.8% crash-free sessions in pilot |
 | Record sharing | Share of payments with a receipt shared (Release 1) or acknowledged (Release 1.1) |
 | Activation | Share of new owners who record a first work day within 24 hours |
+| Paid conversion | Share of owners who buy a Pass or Pro within 30 days. Plan for about 2% (freemium norm), aim higher |
+| Receipt footer | Taps on the receipt-page footer per 100 receipt-page views (counts only) |
+| Limit pressure | Share of free owners who reach 3 workers. If most never do, the free limit earns nothing |
 
 Analytics never collect worker names, contact details, or money amounts.
 
@@ -163,9 +195,11 @@ Work days default to Monday–Saturday and can be changed. Work days drive two t
 
 A project is Active or Archived. Archiving stops reminders and new entries. Reopening restores entry. History and balances stay readable either way.
 
+**Project use** (required, default Personal home): *Personal home* (my own home), *Rental* (a property I rent out) or *Business* (work I'm paid to do, or for my company). It changes only the wording on year-end totals. Helper text: "Used only for the tax notes on year-end totals. You can change it later." 
+
 ## Worker setup
 
-Required: display name. Phone and email are optional and typed in; picking from contacts comes later. **Documents language** is English (default) or Español. It sets the language of that worker's receipts, statements and the hand-over screen. The owner's app stays in English. A worker is stored once per workspace and assigned to projects. The app warns on matching names or contacts, but never merges people automatically. A worker with financial history can't be deleted from the list; they can be made inactive.
+Required: display name. Phone and email are optional; they can be typed in or filled by **Choose from Contacts**, which uses the phone's contact picker so the app only ever sees the one contact picked. **Skills** (optional): up to 12 short labels from a starter list (demo, framing, drywall, painting, tile, flooring, roofing, concrete, carpentry, landscaping, cleanup, general labor, electrical helper, plumbing helper) or typed in. **Favorite**: a star. **Private note**: up to 500 characters, with the hint "Keep notes about the work: quality, timing, reliability." **Documents language** is English (default) or Español. It sets the language of that worker's receipts, statements and the hand-over screen. The owner's app stays in English. A worker is stored once per workspace and assigned to projects. The app warns on matching names or contacts, but never merges people automatically. A worker with financial history can't be deleted from the list; they can be made inactive.
 
 ## Pay agreements: daily or hourly
 
@@ -197,7 +231,7 @@ Remembered: last project, reminder time, receipt payer name (a household or pers
 
 # 4 Navigation and mobile interaction
 
-Four tabs: **Today**, **Workers**, **Payments**, **More**. The project switcher sits at the top of Today, and most owners have one or two active projects. More holds Projects, Ledger, Exports, Reminders, Account, Help, and Diagnostics. Deep links open the intended project, payment, or statement after sign-in.
+Four tabs: **Today**, **Crew** (My crew), **Payments**, **More**. The project switcher sits at the top of Today, and most owners have one or two active projects. More holds Projects, Ledger, Exports, Reminders, Account, Help, and Diagnostics. Deep links open the intended project, payment, or statement after sign-in.
 
 | Screen | Main content | Primary action |
 |---|---|---|
@@ -247,45 +281,45 @@ Support Dynamic Type and Android font scaling to the largest sizes, VoiceOver an
 
 # 5 Screen designs
 
-The full screen set lives on the design canvas ("CrewTally — iPhone screens"), and all 45 screens are exported as images into the Replit build pack (`docs/screens/`). The ten below carry most use. Examples use fictional workers and amounts, and the numbers tie across screens.
+The full screen set lives on the design canvas ("CrewTally — iPhone screens"), and all 51 screens are exported as images into the Replit build pack (`docs/screens/`). The ten below carry most use. Examples use fictional workers and amounts, and the numbers tie across screens.
 
-![Today: cards, list switch, Unrecorded filter, pay button](screens/Today.png)
+![Today: cards, list switch, Unrecorded filter, pay button](scr_Today.png)
 
 **Today.** One card per worker; each tap saves with Undo. The owed total opens the project summary. Mark rest and Pay what's owed sit at the bottom.
 
-![Today list view for a crew of nine](screens/TodayList.png)
+![Today list view for a crew of nine](scr_TodayList.png)
 
 **List view.** For bigger crews: one row per worker, tap a row for the entry sheet. The Unrecorded only filter hides everyone already done.
 
-![Pay what's owed: every worker owed money, amount and method each](screens/PayOwed.png)
+![Pay what's owed: every worker owed money, amount and method each](scr_PayOwed.png)
 
 **Pay what's owed.** Everyone owed money is ticked with the amount prefilled. Method per worker; checks need a number. One tap records one payment per worker.
 
-![Payments recorded, with Get signature and Text receipt per worker](screens/PayOwedDone.png)
+![Payments recorded, with Get signature and Text receipt per worker](scr_PayOwedDone.png)
 
 **After payday.** Each payment has its own receipt number, with Get signature and Text receipt. Status shows once signed or texted.
 
-![Hand-over signature in the worker's language (Spanish)](screens/Handover.png)
+![Hand-over signature in the worker's language (Spanish)](scr_Handover.png)
 
 **Hand-over signature.** The worker confirms one sentence in their language, types their name and signs. Works with no signal. Never changes money.
 
-![Text receipt: message preview before Messages opens](screens/TextLink.png)
+![Text receipt: message preview before Messages opens](scr_TextLink.png)
 
 **Text receipt.** The phone's Messages app opens with the worker's number and this message. The owner taps Send from their own number.
 
-![Receipt page on the worker's phone with confirm and question buttons](screens/WorkerLinkPage.png)
+![Receipt page on the worker's phone with confirm and question buttons](scr_WorkerLinkPage.png)
 
 **Worker's receipt page.** Shows only their share. "Yes, I received this payment" or "I have a question". Expires in 30 days.
 
-![Signed receipt in Spanish](screens/ReceiptSigned.png)
+![Signed receipt in Spanish](scr_ReceiptSigned.png)
 
 **Signed receipt.** Same numbers in English or Spanish; the signed line and signature image appear after hand-over.
 
-![Project summary: to-date totals, by week, by worker](screens/ProjectSummary.png)
+![Project summary: to-date totals, by week, by worker](scr_ProjectSummary.png)
 
 **Project summary.** What the job has cost in labor, with the sum written out, by week and by worker.
 
-![Worker statement](screens/Statement.png)
+![Worker statement](scr_Statement.png)
 
 **Worker statement.** Opening balance, each work day ("not recorded" never shows as $0), reimbursements, payments and closing balance.
 
@@ -333,7 +367,25 @@ One screen per project, opened from the Today owed total or More → Projects.
 
 ## Year-end totals
 
-More → Year-end totals shows, for a chosen calendar year, the net amount paid to each worker across all projects: payments minus reversals, by payment date. Earned and reimbursed amounts show alongside for reference. **Export CSV** shares it. The screen says plainly: "A record of what you paid. It isn't tax advice." The app doesn't collect tax IDs.
+More → Year-end totals shows, for a chosen calendar year, the net amount paid to each worker across all projects: payments minus reversals, by payment date. Earned and reimbursed amounts show alongside for reference. **Export CSV** shares it. The screen says plainly: "A record of what you paid. It isn't tax advice." The app doesn't collect tax IDs in Release 1.
+
+**Tax notes (baseline 1.3).** Figures come from a `tax_thresholds` table, one row per year, each with its IRS source link. Nothing is hard-coded in the app. If the year has no row, no tax note shows.
+
+- **Rental and Business projects:** a worker paid at or above the year's 1099-NEC figure shows "Paid $2,000 or more on rental or business projects in 2026. You may need to send a 1099-NEC. Check with the IRS or your tax preparer." ($600 for 2025 payments; $2,000 for payments from 1 January 2026; the IRS adjusts it for inflation from 2027.)
+- **Personal home projects:** payments for work on your own home are personal and generally aren't reported on a 1099, so no 1099 note shows. When one worker's personal-home total reaches 80% of the year's household-employee figure ($3,000 for 2026), a neutral note shows: "You've paid [name] over $2,400 this year for work at your home. If you direct how and when they work, IRS rules for household employees may apply. Check IRS Publication 926."
+- The app never decides whether someone is an employee or a contractor.
+
+## My crew
+
+The Crew tab shows every worker in the workspace, current and past, as **My crew**.
+
+- **Search** by name or skill. **Filters:** All, Favorites, Working now (a current assignment on an active project) and Past, each with a count. A **Skill** picker narrows the list. Favorites sort first, then by name.
+- **Each row:** name, favorite star, skills, average rating and number of projects; on the right, the amount owed, or "Last worked [date] · [project]" for past workers.
+- **Worker page:** favorite toggle, skills, **Call**, **Text**, **Add to a project**, the rating card (average, "Would hire again", the latest note, receipts confirmed through texted links), balances and payment actions, and **Projects worked** with days, earned and each project's rating.
+- **Rating:** one rating per worker per project: 1–5 stars, would hire again (Yes, Maybe, No) and an optional note. Asked for each worker when a project is archived (skippable), and available any time from the worker's page. Re-rating replaces the earlier rating.
+- **Add to a project (hire again):** choose an active project or start a new one; pay is prefilled from the worker's most recent agreement and can be changed (daily or hourly). **Text first** opens Messages with "Hi Marco, it's Rivera household. I have work at Oak Street duplex starting Mon 5 Oct. Are you available?", in the worker's documents language. The owner taps Send.
+- **Privacy:** ratings, notes and skills belong to the owner. They are never shown on receipts, statements, share links, the public receipt page or anything a worker sees, and are never shared with other owners. They are included in the owner's own data export and deleted with the account.
+- **Plans:** saved and past workers never count toward the Free limit of 3 current workers. My crew is included on every plan.
 
 ## Day completion
 
@@ -422,7 +474,7 @@ Proof the worker received their money, on the owner's phone, with no link or sig
 
 ## Recording and checks
 
-Payments are drafts on the device until recorded. Recording needs a connection and a confirmation: "Money was sent / cash handed over / check issued". Checks track Issued → Cleared or Returned. An issued check credits the worker immediately and shows "Check not cleared". Clearing adds no second credit. A returned check reverses every allocation.
+Payments are drafts on the device until recorded. Recording needs a connection and a confirmation: "Transfer made / Cash handed over / Check issued". Checks track Issued → Cleared or Returned. An issued check credits the worker immediately and shows "Check not cleared". Clearing adds no second credit. A returned check reverses every allocation.
 
 ## Reversals and corrections
 
@@ -526,7 +578,7 @@ The link opens a plain web page at crewtallyapp.com/r/… served by the CrewTall
 - the signed line, if they signed;
 - the two acknowledgment buttons.
 
-It has no evidence photos in Release 1; those come in Release 1.1 with file scanning. It has no login, no third-party scripts, no tracking, and isn't indexed by search engines. An expired, revoked or unknown link shows the same message: "This receipt link isn't available. Ask Rivera household to send a new one."
+At the bottom, in small text: "Kept with CrewTally — free for homeowners", linking to crewtallyapp.com/go/app, which counts the tap (no cookie, no personal data) and redirects to the App Store page. The page view is counted the same way. It has no evidence photos in Release 1; those come in Release 1.1 with file scanning. It has no login, no third-party scripts, no tracking, and isn't indexed by search engines. An expired, revoked or unknown link shows the same message: "This receipt link isn't available. Ask Rivera household to send a new one."
 
 ## Sharing journey
 
@@ -602,7 +654,7 @@ Release 2 adds offline creation of workers and assignments, a cursor-based pull 
 | Financial writes | Postgres functions called over RPC, one transaction each | Clients have no direct write access to financial tables |
 | Reads | Row-level security scoped to the owner's workspace | Every table has workspace_id |
 | Public record pages (1.1) | One server function plus a static page | Token lookup by hash |
-| Crash reporting | Sentry or equivalent, with scrubbing | No amounts or names |
+| Crash reporting | None in the iPhone Release 1 (needs a native module outside the Expo SDK); server logs with correlation IDs | No amounts or names |
 
 Pin versions after the week-1 spike, which proves auth, notifications, the SQLite queue, PDF sharing, and a store upload on both platforms. Recheck store SDK rules at release.
 
@@ -652,6 +704,15 @@ All tenant tables carry workspace_id and use UUID keys. Parent–child links use
 | PaymentSignature | payment, worker, typed name, signature image (evidence), language, exact sentence, amount, time; one per worker per payment |
 | Worker (1.2) | adds documents language: en or es |
 | Views | `assignment_totals` (earned, reimbursed, added, taken off, paid, reversed, balance) and `worker_year_paid` |
+| Project (1.3) | adds project_use (PERSONAL_HOME, RENTAL, BUSINESS) and pass_id (unique; the Project Pass that covers it) |
+| WorkspaceEntitlement (1.3) | Pro active, expiry, product, source; one row per workspace |
+| ProjectPass (1.3) | store transaction ID (unique), product, purchased and refunded times |
+| EntitlementEvent (1.3) | store event ID (unique), type, product, transaction, expiry; makes purchase webhooks idempotent |
+| TaxThreshold (1.3) | year, kind (1099-NEC, household employee), amount, IRS source URL |
+| GrowthCounter (1.3) | day, source (receipt page view, footer tap), count; no personal data |
+| Worker (1.4) | adds favorite, skills (≤ 12, trimmed, unique), private note (≤ 500) |
+| WorkerRating (1.4) | assignment (unique), stars 1–5, would hire (yes, maybe, no), note; private to the owner |
+| Function (1.4) | `crew_summary(workspace)`: projects, days worked, last worked, working now, rating average and count, receipts texted and confirmed |
 | AuditEvent, IdempotencyKey | actor and action; operation ID with request hash and stored response |
 
 **Nightly reconciliation job.** For every assignment, the job recomputes the balance from ledger events and compares it with the cached balance. It also checks that every payment's allocations sum to the payment amount, and that no allocation's reversals exceed it. Any mismatch alerts immediately.
@@ -691,7 +752,14 @@ Owner APIs require an authenticated session and enforce workspace ownership. Wri
 | POST /payouts | operation_id, date, lines (assignment, amount, method, reference) → one payment per line, all or nothing |
 | POST /payments/{id}/signatures | Worker, typed name, signature image (uploaded as evidence first), language, sentence → no ledger effect |
 | GET /projects/{id}/summary | To-date totals, weekly earned, per-worker totals |
-| GET /reports/year-totals?year= | Net paid, earned and reimbursed per worker; CSV export |
+| GET /reports/year-totals?year= | Net paid, earned and reimbursed per worker; CSV export; 1.3 adds per-use totals and tax notes |
+| GET /plan | Pro state and expiry, free limits, current usage, unused passes |
+| POST /plan/refresh | Asks RevenueCat for the latest customer state and records it (after purchase or restore) |
+| POST /webhooks/revenuecat | Store events → `record_entitlement_event`; authenticated by a shared secret header; idempotent by event ID |
+| GET /go/app | Counts a footer tap and redirects to the App Store page |
+| GET /crew?filter=&skill=&q= | My crew list with filter counts |
+| PUT /assignments/{id}/rating | Stars, would hire, note → one rating per assignment (re-rating replaces) |
+| GET /workers/{id}/last-rate · GET /projects/{id}/unrated | Prefill for hire again; workers to rate after archiving |
 
 ## Payment example
 
@@ -705,6 +773,7 @@ For a $300 payment: amount_minor = 30000, method = BANK_TRANSFER, recipient = "C
 | 401 | Session expired |
 | 404 | Not found, or not yours; the two are indistinguishable by design |
 | 409 | Stale version, or operation ID reused with a different payload |
+| 402 | Plan limit reached (`PLAN_LIMIT`, with which limit and the maximum). The app shows the plan screen |
 | 422 | Business rule failed (split mismatch, date outside assignment, basis mismatch) |
 | 429 | Throttled; retry later |
 
@@ -746,7 +815,7 @@ Financial history is kept until the owner deletes it; archiving is the normal wa
 
 ## Worker data
 
-Worker names and contact details are personal data about third parties. The privacy notice says so, explains they are used only to label records and address shares, and tells owners how to delete them.
+Worker names and contact details are personal data about third parties. The privacy notice says so, explains they are used only to label records and address shares, and tells owners how to delete them. From baseline 1.4 the owner can also keep skills, a private note and ratings about a worker. These stay private to the owner, never reach the worker or other owners, are limited in length, and the note field steers owners to write about the work only. Owners can edit or clear them at any time, and they are deleted with the account.
 
 ## Abuse controls
 
@@ -828,18 +897,37 @@ Long lists are virtualized, the ledger and history are paged, and evidence is ne
 | T46 | Sample project | No network writes while in sample; removed when first real project is created | 21 |
 | T47 | Year-end totals | Net paid = payments − reversals by payment date for the year | 22 |
 | T48 | List view | Nine workers fit on one screen; Unrecorded filter hides recorded workers; choice remembered | 04 |
+| T49 | Free project limit | Second active project → 402; archive then create works; reopening a second → 402 | 24 |
+| T50 | Free worker limit | Fourth current worker → 402; already-ended history allowed | 24 |
+| T51 | Records never locked | After Pro lapses, work and payments for existing workers still succeed; new project → 402 | 24 |
+| T52 | Project Pass rules | Another workspace's pass → 404; used pass → 409; a pass stays with its project | 24 |
+| T53 | Project use and plan status | Three values only; GET /plan matches the database | 24, 25 |
+| T54 | 1099 note | Business/Rental payments at or over the year's figure show the note; personal-home never | 25 |
+| T55 | Threshold years | 2025 uses $600; a year with no row shows no note; household note from 80% | 25 |
+| T56 | Receipt footer | No token in the footer link; page views and taps counted; 404 not counted | 24 |
+| T57 | Store webhook | Wrong secret → 401; repeats recorded once; renewals never shorten expiry; expiry restores Free limits | 24 |
+| T58 | Pass purchase and refund | Purchase adds an unused pass; refund stops new workers over the limit; existing work continues | 24 |
+| T59 | Purchases in the app | Configured with the workspace ID only; never in sample mode; prices only from the store | 24 |
+| T60 | Skills rules | Duplicates, more than 12, untrimmed → 422 | 26 |
+| T61 | My crew filters | Favorites, working now (project time zone), past; search by skill | 26 |
+| T62 | Ratings | 1–5 stars, three would-hire values, re-rating replaces, other workspace → 404 | 26 |
+| T63 | Saved workers and Free | A saved worker doesn't count; assigning them as a 4th current worker → 402 | 24, 26 |
+| T64 | Hire again | Prefill equals the latest agreement; message in the worker's language | 26 |
+| T65 | Private stays private | No note, skill or rating in receipts, statements, links, the receipt page, hand-over or messages | 26 |
+| T66 | Concurrent limit | Two parallel 4th-worker requests: one succeeds, one → 402 | 24 |
+| T67 | End-date and backdating tricks | Paid work on a new day for a 4th worker on Free → 402 whatever the end dates; corrections of paid days always allowed; assignments never move worker or project | 24 |
 
-T01–T06, T11, T15, T17–T20, T35, and the section 8 sequence run today as automated tests against the Appendix A schema.
+T01–T06, T11, T15, T17–T20, T35, and the section 8 sequence run today as automated tests against the Appendix A schema. The plan and crew rules behind T49–T67 are covered at database level by `db/provided/tests/08–10`.
 
 ## Release gates (Release 1)
 
-- All money, isolation, idempotency, and no-signal tests pass on a real iPhone and a real Android phone.
+- All money, isolation, idempotency, and no-signal tests pass on a real iPhone (and on a real Android phone when Android ships).
 - No open critical or high security or balance defects.
 - Reconciliation job running in staging with zero mismatches for 7 days.
 - Restore rehearsed.
 - Account deletion works in the app and on the web.
-- Privacy policy, App Privacy details (Apple), and Data safety form (Google) match the build.
-- Pilot of at least 5 owners with real projects for 2 weeks (TestFlight and a Play closed test).
+- Privacy policy and App Privacy details (Apple) match the build (and the Data safety form when Android ships).
+- Pilot of at least 5 owners with real projects for 2 weeks (TestFlight; a Play closed test when Android ships).
 
 # 18 Delivery plan: fast to both stores
 
@@ -917,29 +1005,47 @@ If the team is a single AI-assisted engineer, add 50% to the timeline and keep t
 | Launch currency | USD |
 | Product name | CrewTally · subtitle "Work and pay for day workers" · bundle ID com.crewtallyapp.crewtally |
 | Link expiry | 30 days for receipts, 90 days for statements |
+| Pricing (Release 1) | Free, Project Pass $24.99, Pro $7.99/month or $49.99/year. Apple in-app purchase through Replit's RevenueCat integration, Small Business Program (15%). See "Plans and pricing" below |
+| Publishing entity | Individual Apple Developer account (enrolled 24 September 2026); convert to an organization later if wanted |
 
 ## Still open
 
 | Decision | Default until decided |
 |---|---|
 | Publisher website | crewtallyapp.com (bought); privacy, support and account-deletion pages live there |
-| Publishing entity on both stores | An organization account with D-U-N-S |
-| Pricing | Free during pilot; no billing code in Release 1. See the proposal below and decide before public launch |
+| Project Pass technical check | Must buy and restore correctly in a Replit-published TestFlight build. If not, launch with Free and Pro only |
+| Free limits | 1 active project, 3 current workers. Confirm in owner interviews (how many workers per project?) |
+| Web checkout | Not in Release 1. Revisit once the US court case on link-out fees settles (Supreme Court ruling expected no earlier than June 2027) |
 | Backup and restore on Replit | Nightly encrypted dump until Replit's point-in-time restore is confirmed |
 | Minimum OS versions | Whatever the Expo SDK chosen at kickoff supports |
 | Launch countries | United States |
 
-## Pricing proposal (to decide before public launch)
+## Plans and pricing (Release 1)
 
-A starting point, not a decision. Test it with pilot owners before committing.
+Checked 25 September 2026 against comparable App Store apps, RevenueCat's 2026 subscription benchmarks, Apple's current rules and IRS guidance.
 
-| Option | How it works | Fit |
+| Plan | Price | What it includes |
 |---|---|---|
-| **Free with limits, then subscription** (recommended to test) | Free for 1 active project and up to 3 workers. A paid tier unlocks unlimited projects and workers. Spanish documents stay free | Homeowners with one job pay nothing; landlords and crew leads who use it all year pay |
-| One-time purchase | Pay once, unlock everything | Simple, but no recurring income to cover hosting |
-| Per-project pass | Pay per project for its duration | Matches how remodels work, but unusual on the App Store |
+| Free | $0 | 1 active project and 3 current workers. Everything else in Release 1, including receipts, statements, Spanish documents, signatures and CSV export |
+| Project Pass | $24.99, once per project | One project with no worker limit, for as long as it exists. Fits a homeowner's one-off remodel |
+| Pro | $7.99/month or $49.99/year | Unlimited projects and workers. For crew leads and landlords who use it all year |
 
-Payments for digital features inside an iPhone app go through Apple's in-app purchase, and Apple takes a share. Adding billing means another App Store review, so plan it as its own release after the pilot.
+**Why these numbers.** The closest App Store app (a crew attendance and wage tracker) charges $7.99/month and $49.99/year. Across North American subscription apps the median is $9.99/month and $39.99/year. Crew time-clock software charges $5–$13 per worker per month plus base fees, which is dearer for a crew of three or more. No app was found that sells a pass per project, so the Pass is a bet on how remodels work: 2–6 months, then done. Freemium apps convert only about 2% of downloads to paid in the first month, so the free limits must bite for owners with a real crew.
+
+**Rules that don't bend.**
+- Workers never pay and never need an account.
+- Records are never locked. If Pro lapses or a Pass is refunded, every existing record stays readable, exportable and usable: work entry and payments on existing workers keep working. Only new projects, reopened projects and new current workers are limited.
+- No ads.
+- Account deletion doesn't cancel an Apple subscription. The deletion screen says so and links to the phone's subscription settings.
+
+**How payment works.**
+- Apple in-app purchase, added through Replit's RevenueCat integration (the one native module outside the Expo SDK). Purchases are simulated in Expo Go and become real after Apple approves the app.
+- Enroll in Apple's Small Business Program before the first paid build: 15% commission instead of 30%. The rate starts about two weeks after approval.
+- Products: `pro_monthly` and `pro_annual` (auto-renewing, one subscription group), and `project_pass` (consumable; each purchase adds one pass, recorded on the CrewTally server because Apple doesn't restore consumables).
+- The RevenueCat app user ID is the workspace ID. Never the Apple ID, email or name.
+- Plan limits are enforced in the database under a per-workspace lock, in the project's own time zone. History (workers saved as already ended) is always allowed and holds no slot, but paid work on a new day on a Free project is checked against the workers paid within 29 days either side of that date. Correcting a day that already had paid work is never limited, and workers added while the project had a Pass or Pro are never limited later. A pass stays with the first project it covers. Refund notices that arrive before purchase notices are honored.
+- RevenueCat sends store events to the API's webhook; the server records them with `record_entitlement_event` (idempotent by event ID). The app never decides its own plan.
+- US web checkout (Stripe) is allowed today with no Apple commission, but Replit has no documented setup for it and Apple has asked the court for a fee on it. Not in Release 1.
 
 ## Partner access (Release 1.1)
 
@@ -961,11 +1067,22 @@ Show the screens to three or four people who pay day or hourly workers: a homeow
 2. Hand them Today: "Marco worked a full day, Sam worked 8 hours. Record that." Watch; don't help.
 3. "It's Friday. Pay everyone what they're owed." Watch the pay-what's-owed flow.
 4. "Get proof that Marco got his cash." Watch the hand-over.
-5. "What would stop you using this?" and "What would you pay for it, if anything?"
+5. "When you start a new project, how do you find the workers you used before?"
+6. "What would stop you using this?" and "What would you pay for it, if anything?"
 
 Note where they hesitate, what they call things, and anything they expected but didn't find. If two or more people stumble on the same step, change the design before Phase 3.
 
-## References (checked 24 September 2026)
+## References (checked 24–25 September 2026)
+
+- Pricing and feature validation report, 25 September 2026 (research notes and sources in the build pack's companion report).
+- Replit: RevenueCat subscriptions for mobile apps. https://docs.replit.com/core-concepts/monetization/revenuecat-subscriptions
+- Expo: in-app purchases guide. https://docs.expo.dev/guides/in-app-purchases/
+- Apple: App Store Small Business Program. https://developer.apple.com/app-store/small-business-program/
+- Apple: App Review Guidelines 3.1. https://developer.apple.com/app-store/review/guidelines/
+- Apple's August 2026 link-out fee proposal (not in effect). https://techcrunch.com/2026/08/14/apple-proposes-to-take-a-15-cut-of-purchases-made-outside-the-app-store/
+- IRS: Instructions for Forms 1099-MISC and 1099-NEC (2026; $2,000 threshold for payments after 2025). https://www.irs.gov/instructions/i1099mec
+- IRS Publication 926, Household Employer's Tax Guide (2026). https://www.irs.gov/publications/p926
+
 
 - React Native: starting a new app through a framework (Expo recommended). https://reactnative.dev/docs/environment-setup
 - Expo SDK 57 release notes (React Native 0.86). https://expo.dev/changelog/sdk-57
@@ -988,13 +1105,15 @@ The owner is live on both stores and can:
 - understand every balance,
 - share each worker a receipt or statement that shows only their own records, in English or Spanish,
 - pay the whole crew in one step and get a signature for cash,
-- see what the project has cost in labor so far.
+- see what the project has cost in labor so far,
+- stay on Free, buy a Project Pass, or subscribe to Pro, and never lose access to a record,
+- keep a private record of who did good work, and bring them back for the next project.
 
 Every posted amount traces to a ledger row, and every unsent entry and unresolved conflict is visible.
 
 # Appendix A: Reference SQL schema
 
-The schema below is the one shipped in the Replit build pack (`db/schema.sql`). It holds every money-writing function: work entry, mark rest, payments, pay what's owed, reversals, checks, corrections, reimbursements, adjustments, rate changes with preview, hand-over signatures, texted-link open and acknowledge, and account deletion. It was loaded into PostgreSQL 16 and exercised by seven test files (`db/tests/01`–`07`) covering the pay vectors, the section 8 sequence, idempotent retries, stale versions, split and payout atomicity, check lifecycle, partial refunds, corrections, backdated rate changes, signatures, links, the totals views, isolation and deletion. All pass.
+The schema below is the one shipped in the Replit build pack (`db/schema.sql`), followed by migrations `0003_plans_and_project_use.sql` (baseline 1.3: plans, project use, tax thresholds, growth counter; tested by `db/tests/08`) and `0004_crew.sql` (baseline 1.4: skills, favorites, private notes, ratings, crew summary; tested by `db/provided/tests/09`, with plan-limit hardening in `10`). It holds every money-writing function: work entry, mark rest, payments, pay what's owed, reversals, checks, corrections, reimbursements, adjustments, rate changes with preview, hand-over signatures, texted-link open and acknowledge, and account deletion. It was loaded into PostgreSQL 16 and exercised by seven test files (`db/tests/01`–`07`) covering the pay vectors, the section 8 sequence, idempotent retries, stale versions, split and payout atomicity, check lifecycle, partial refunds, corrections, backdated rate changes, signatures, links, the totals views, isolation and deletion. All pass.
 
 ```sql
 -- CrewTally: reference schema (PostgreSQL 15+)
@@ -1960,6 +2079,610 @@ begin
 end $$;
 ```
 
+```sql
+-- =====================================================================
+-- 0003 — Plans (Free / Project Pass / Pro), project use, tax thresholds,
+--        receipt-link growth counter.            Baseline 1.3, Phase 2.
+-- Additive only. Loaded after 0001_schema.sql and 0002_auth.sql.
+-- Plan limits are enforced here, by triggers, so no code path can skip them.
+-- Limits only stop NEW projects, reopened projects and NEW assignments.
+-- Existing records are never locked: work, payments, receipts, statements
+-- and exports keep working on any plan, including after Pro lapses.
+-- =====================================================================
+
+-- ---------- project use: decides tax wording on year-end totals ----------
+alter table projects
+  add column project_use text not null default 'PERSONAL_HOME'
+    check (project_use in ('PERSONAL_HOME','RENTAL','BUSINESS'));
+
+-- ---------- Pro subscription state (one row per workspace) ----------
+create table workspace_entitlements (
+  workspace_id     uuid primary key references workspaces(id) on delete cascade,
+  pro_active       boolean not null default false,
+  pro_expires_at   timestamptz,                 -- null with pro_active = lifetime/comp
+  pro_product_id   text,
+  source           text check (source in ('APPLE_IAP','WEB','COMP')),
+  updated_at       timestamptz not null default now()
+);
+
+-- ---------- Project Pass purchases ----------
+create table project_passes (
+  id               uuid primary key default gen_random_uuid(),
+  workspace_id     uuid not null references workspaces(id) on delete cascade,
+  transaction_id   text not null unique,       -- store transaction id; one pass per purchase
+  product_id       text not null,
+  purchased_at     timestamptz not null,
+  refunded_at      timestamptz,
+  unique (workspace_id, id)
+);
+
+-- A project carries at most one pass; a pass covers at most one project.
+alter table projects add column pass_id uuid unique;
+alter table projects
+  add constraint projects_pass_fk foreign key (workspace_id, pass_id)
+  references project_passes (workspace_id, id);
+
+-- ---------- store webhook events, for idempotency and audit ----------
+create table entitlement_events (
+  id               uuid primary key default gen_random_uuid(),
+  workspace_id     uuid not null references workspaces(id) on delete cascade,
+  event_id         text not null unique,       -- RevenueCat event id (or web checkout id)
+  event_type       text not null check (event_type in
+                     ('PRO_ACTIVE','PRO_EXPIRED','PASS_PURCHASED','PASS_REFUNDED')),
+  product_id       text,
+  transaction_id   text,
+  expires_at       timestamptz,
+  occurred_at      timestamptz not null,
+  received_at      timestamptz not null default now()
+);
+
+-- ---------- tax thresholds, one row per year (never hard-code in the app) ----------
+create table tax_thresholds (
+  tax_year     integer not null,
+  kind         text not null check (kind in ('FORM_1099_NEC','HOUSEHOLD_EMPLOYEE_FICA')),
+  amount_minor bigint not null check (amount_minor > 0),
+  source_url   text not null,
+  primary key (tax_year, kind)
+);
+insert into tax_thresholds values
+  (2025,'FORM_1099_NEC',            60000, 'https://www.irs.gov/instructions/i1099mec'),
+  (2026,'FORM_1099_NEC',           200000, 'https://www.irs.gov/instructions/i1099mec'),
+  (2025,'HOUSEHOLD_EMPLOYEE_FICA', 280000, 'https://www.irs.gov/publications/p926'),
+  (2026,'HOUSEHOLD_EMPLOYEE_FICA', 300000, 'https://www.irs.gov/publications/p926');
+
+-- ---------- receipt-link growth counter: counts only, no people ----------
+create table growth_counters (
+  day     date not null,
+  source  text not null check (source in ('RECEIPT_PAGE_VIEW','RECEIPT_FOOTER_TAP')),
+  count   integer not null default 0,
+  primary key (day, source)
+);
+
+-- =====================================================================
+-- Plan logic
+-- =====================================================================
+-- How the Free worker limit works:
+--  * adding or extending a CURRENT assignment on a free project needs a free slot (3 workers);
+--  * assignments saved already ended (history) are always allowed and hold no slot;
+--  * recording PAID work on a new day on a free project is checked too: the worker must fit among
+--    the workers paid on free projects within 29 days either side of that date (plus today's current
+--    workers when the date is recent). This stops end-date and backdating tricks without counting
+--    old history. Correcting a day that already had paid work is never limited.
+--  * an assignment never moves to another worker or project.
+--  * assignments created while the project had full access (Pass or Pro) are never limited later
+--    (invariant 16: existing workers keep working after Pro lapses or a pass is refunded).
+alter table assignments add column created_with_full_access boolean not null default false;  -- set only by trigger
+create index assignments_ws_worker on assignments (workspace_id, worker_id);
+
+-- Free limits. Change here only; the app reads them from GET /v1/plan.
+create function plan_free_limits() returns jsonb language sql immutable as $$
+  select jsonb_build_object('active_projects', 1, 'workers', 3)
+$$;
+
+-- "Today" in the project's own time zone (never the server's).
+create function project_today(p_project uuid) returns date
+language sql stable as $$
+  select (now() at time zone p.timezone)::date from projects p where p.id = p_project
+$$;
+
+create function workspace_is_pro(p_workspace uuid) returns boolean
+language sql stable as $$
+  select coalesce((select pro_active and (pro_expires_at is null or pro_expires_at > now())
+                   from workspace_entitlements where workspace_id = p_workspace), false)
+$$;
+
+-- A project has full access when the workspace is Pro or it carries an unrefunded pass.
+create function project_has_full_access(p_project uuid) returns boolean
+language sql stable as $$
+  select workspace_is_pro(p.workspace_id)
+      or exists (select 1 from project_passes pp where pp.id = p.pass_id and pp.refunded_at is null)
+  from projects p where p.id = p_project
+$$;
+
+-- Free projects = active projects without a live pass.
+create function free_active_project_count(p_workspace uuid, p_exclude uuid) returns integer
+language sql stable as $$
+  select count(*)::int from projects p
+  where p.workspace_id = p_workspace and p.status = 'ACTIVE'
+    and p.id is distinct from p_exclude
+    and not exists (select 1 from project_passes pp where pp.id = p.pass_id and pp.refunded_at is null)
+$$;
+
+-- Workers with a current assignment (not ended in the project's own time zone) on a free active project.
+create function free_current_workers(p_workspace uuid, p_exclude_assignment uuid) returns setof uuid
+language sql stable as $$
+  select distinct a.worker_id
+  from assignments a join projects p on p.id = a.project_id
+  where a.workspace_id = p_workspace and p.status = 'ACTIVE'
+    and not project_has_full_access(p.id)
+    and (a.end_date is null or a.end_date >= (now() at time zone p.timezone)::date)
+    and a.id is distinct from p_exclude_assignment
+$$;
+
+-- Workers paid on free projects within 29 days either side of p_date (assignments created with full access excluded).
+create function free_paid_workers(p_workspace uuid, p_date date) returns setof uuid
+language sql stable as $$
+  select distinct a.worker_id
+  from work_entries e
+  join work_revisions r on r.entry_id = e.id and r.revision = e.active_revision
+  join assignments a on a.id = e.assignment_id
+  join projects p on p.id = a.project_id
+  where a.workspace_id = p_workspace
+    and not a.created_with_full_access
+    and not project_has_full_access(p.id)
+    and r.input_mode not in ('NO_WORK','VOID')
+    and e.work_date between p_date - 29 and p_date + 29
+$$;
+
+-- Plan checks rely on a per-workspace lock, which only protects READ COMMITTED transactions.
+create function require_read_committed() returns void
+language plpgsql as $$
+begin
+  if current_setting('transaction_isolation') <> 'read committed' then
+    raise exception 'plan changes must run at READ COMMITTED' using errcode = '25001';
+  end if;
+end $$;
+
+-- Project time zones must be real IANA names (the plan rules use them).
+create function trg_projects_timezone_valid() returns trigger
+language plpgsql as $$
+begin
+  if not exists (select 1 from pg_timezone_names where name = new.timezone) then
+    raise exception 'unknown time zone' using errcode = '22023';
+  end if;
+  return new;
+end $$;
+create trigger projects_timezone_valid
+  before insert or update of timezone on projects
+  for each row execute function trg_projects_timezone_valid();
+
+-- One lock per workspace so two requests at once can't both pass a limit check.
+create function lock_workspace_plan(p_workspace uuid) returns void
+language sql as $$
+  select pg_advisory_xact_lock(hashtextextended('crewtally_plan:' || p_workspace::text, 0))
+$$;
+
+create function trg_projects_plan_limit() returns trigger
+language plpgsql as $$
+declare v_projects int := (plan_free_limits()->>'active_projects')::int;
+        v_workers  int := (plan_free_limits()->>'workers')::int;
+        v_count int;
+begin
+  perform require_read_committed();
+  perform lock_workspace_plan(new.workspace_id);
+  -- A pass stays with the first project it covers.
+  if tg_op = 'UPDATE' and old.pass_id is not null and new.pass_id is distinct from old.pass_id then
+    raise exception 'a project pass stays with its project' using errcode = '22023';
+  end if;
+  if new.status <> 'ACTIVE' then return new; end if;
+  -- Nothing to check when an active project only changes other fields.
+  if tg_op = 'UPDATE' and old.status = 'ACTIVE' and new.pass_id is not distinct from old.pass_id then
+    return new;
+  end if;
+  if new.pass_id is not null then
+    if exists (select 1 from project_passes pp
+               where pp.id = new.pass_id and pp.workspace_id = new.workspace_id and pp.refunded_at is null) then
+      return new;
+    end if;
+    -- A new or changed pass must be live. A refunded pass that stays on its project
+    -- just means the project is checked like any other Free project.
+    if tg_op = 'INSERT' or new.pass_id is distinct from old.pass_id then
+      raise exception 'project pass not available' using errcode = 'P0002';
+    end if;
+  end if;
+  if workspace_is_pro(new.workspace_id) then return new; end if;
+  if free_active_project_count(new.workspace_id, new.id) >= v_projects then
+    raise exception 'plan limit: active projects' using errcode = 'CT402',
+      detail = jsonb_build_object('limit','active_projects','max',v_projects)::text;
+  end if;
+  -- Reopening a free project brings its current workers back into the Free count.
+  if tg_op = 'UPDATE' then
+    select count(*) into v_count from (
+      select w from free_current_workers(new.workspace_id, null) w
+      union
+      select a.worker_id from assignments a
+      where a.project_id = new.id
+        and (a.end_date is null or a.end_date >= (now() at time zone new.timezone)::date)) s;
+    if v_count > v_workers then
+      raise exception 'plan limit: workers' using errcode = 'CT402',
+        detail = jsonb_build_object('limit','workers','max',v_workers)::text;
+    end if;
+  end if;
+  return new;
+end $$;
+
+create trigger projects_plan_limit
+  before insert or update of status, pass_id on projects
+  for each row execute function trg_projects_plan_limit();
+
+create function trg_assignments_plan_limit() returns trigger
+language plpgsql as $$
+declare v_limit int := (plan_free_limits()->>'workers')::int; v_count int; v_today date;
+begin
+  if tg_op = 'UPDATE' then
+    -- An assignment is one worker on one project for good: history and money hang off it.
+    if new.worker_id <> old.worker_id or new.project_id <> old.project_id then
+      raise exception 'an assignment can''t move to another worker or project' using errcode = '22023';
+    end if;
+    new.created_with_full_access := old.created_with_full_access;   -- set only at insert
+    if new.end_date is not distinct from old.end_date and new.project_id = old.project_id
+       and new.worker_id = old.worker_id then
+      return new;
+    end if;
+  end if;
+  perform require_read_committed();
+  perform lock_workspace_plan(new.workspace_id);
+  if project_has_full_access(new.project_id) then
+    if tg_op = 'INSERT' then new.created_with_full_access := true; end if;
+    return new;
+  end if;
+  if tg_op = 'INSERT' then new.created_with_full_access := false; end if;
+  if new.created_with_full_access then return new; end if;
+  v_today := project_today(new.project_id);
+  -- History (already ended) is always allowed and holds no slot; paid work on it is checked below.
+  if new.end_date is not null and new.end_date < v_today then return new; end if;
+  select count(*) into v_count from (
+    select w from free_current_workers(new.workspace_id, new.id) w
+    union select new.worker_id) s;
+  if v_count > v_limit then
+    raise exception 'plan limit: workers' using errcode = 'CT402',
+      detail = jsonb_build_object('limit','workers','max',v_limit)::text;
+  end if;
+  return new;
+end $$;
+
+create trigger assignments_plan_limit
+  before insert or update of end_date, project_id, worker_id, created_with_full_access on assignments
+  for each row execute function trg_assignments_plan_limit();
+
+-- Paid work on a free project: the worker must fit among the current and recently paid workers.
+-- "No work" and cleared entries are always allowed, so marking a rest day never fails.
+create function trg_work_revisions_plan_limit() returns trigger
+language plpgsql as $$
+declare v_limit int := (plan_free_limits()->>'workers')::int; a record; v_date date; v_count int;
+begin
+  if new.input_mode in ('NO_WORK','VOID') then return new; end if;
+  -- Correcting a day that already had paid work is never limited (records are never locked).
+  if exists (select 1 from work_revisions r where r.entry_id = new.entry_id
+             and r.input_mode not in ('NO_WORK','VOID')) then
+    return new;
+  end if;
+  select asg.workspace_id, asg.worker_id, asg.project_id, asg.created_with_full_access, e.work_date
+    into a
+  from work_entries e join assignments asg on asg.id = e.assignment_id where e.id = new.entry_id;
+  if a.created_with_full_access or project_has_full_access(a.project_id) then return new; end if;
+  perform require_read_committed();
+  perform lock_workspace_plan(a.workspace_id);
+  -- Today's current workers only matter for recent work; older days are judged by who was paid then.
+  select count(*) into v_count from (
+    select w from free_current_workers(a.workspace_id, null) w
+     where a.work_date >= project_today(a.project_id) - 29
+    union select w from free_paid_workers(a.workspace_id, a.work_date) w
+    union select a.worker_id) s;
+  if v_count > v_limit then
+    raise exception 'plan limit: workers' using errcode = 'CT402',
+      detail = jsonb_build_object('limit','workers','max',v_limit)::text;
+  end if;
+  return new;
+end $$;
+
+create trigger work_revisions_plan_limit
+  before insert on work_revisions
+  for each row execute function trg_work_revisions_plan_limit();
+
+-- ---------- one idempotent entry point for store / web purchase events ----------
+create function record_entitlement_event(
+  p_workspace uuid, p_event_id text, p_type text, p_product text,
+  p_transaction text, p_expires_at timestamptz, p_occurred_at timestamptz,
+  p_source text default 'APPLE_IAP')
+returns jsonb language plpgsql security definer as $$
+declare v_id uuid; v_prev entitlement_events; v_other uuid;
+begin
+  if not exists (select 1 from workspaces where id = p_workspace) then
+    raise exception 'workspace not found' using errcode = 'P0002'; end if;
+  if p_type is null or p_type not in ('PRO_ACTIVE','PRO_EXPIRED','PASS_PURCHASED','PASS_REFUNDED') then
+    raise exception 'unknown event type' using errcode = '22023'; end if;
+  if p_event_id is null or length(trim(p_event_id)) = 0 then
+    raise exception 'event id required' using errcode = '22023'; end if;
+  if p_source is null or p_source not in ('APPLE_IAP','WEB','COMP') then
+    raise exception 'unknown source' using errcode = '22023'; end if;
+  if p_type in ('PASS_PURCHASED','PASS_REFUNDED') then
+    if p_transaction is null then raise exception 'transaction id required' using errcode = '22023'; end if;
+    select workspace_id into v_other from project_passes where transaction_id = p_transaction;
+    if v_other is not null and v_other <> p_workspace then
+      raise exception 'transaction belongs to another account' using errcode = '22023';
+    end if;
+  end if;
+
+  -- Idempotent and race-safe: the unique event id decides.
+  insert into entitlement_events (workspace_id, event_id, event_type, product_id, transaction_id, expires_at, occurred_at)
+    values (p_workspace, p_event_id, p_type, p_product, p_transaction, p_expires_at, p_occurred_at)
+  on conflict (event_id) do nothing
+  returning id into v_id;
+  if v_id is null then
+    select * into v_prev from entitlement_events where event_id = p_event_id;
+    if v_prev.workspace_id = p_workspace and v_prev.event_type = p_type
+       and v_prev.transaction_id is not distinct from p_transaction then
+      return jsonb_build_object('status','duplicate');
+    end if;
+    raise exception 'event id reused with different details' using errcode = '23505';
+  end if;
+
+  if p_type = 'PRO_ACTIVE' then
+    insert into workspace_entitlements (workspace_id, pro_active, pro_expires_at, pro_product_id, source, updated_at)
+      values (p_workspace, true, p_expires_at, p_product, p_source, now())
+    on conflict (workspace_id) do update
+      set pro_active = true,
+          -- null means "never expires"; keep it. Otherwise never move the expiry backwards.
+          pro_expires_at = case
+            when workspace_entitlements.pro_active and workspace_entitlements.pro_expires_at is null then null
+            when excluded.pro_expires_at is null then null
+            when workspace_entitlements.pro_expires_at is null then excluded.pro_expires_at
+            else greatest(workspace_entitlements.pro_expires_at, excluded.pro_expires_at) end,
+          source = case when workspace_entitlements.pro_active and workspace_entitlements.pro_expires_at is null
+                        then workspace_entitlements.source else excluded.source end,
+          pro_product_id = excluded.pro_product_id, updated_at = now();
+  elsif p_type = 'PRO_EXPIRED' then
+    -- No expiry given = ended now (refund or revoke), except a comp plan, which store notices never end.
+    -- With an expiry, ignore notices for an earlier period, and never end a no-expiry plan with a dated notice.
+    update workspace_entitlements set pro_active = false, updated_at = now()
+     where workspace_id = p_workspace
+       and ((p_expires_at is null and source is distinct from 'COMP')
+            or (pro_expires_at is not null and pro_expires_at <= p_expires_at));
+  elsif p_type = 'PASS_PURCHASED' then
+    insert into project_passes (workspace_id, transaction_id, product_id, purchased_at, refunded_at)
+      values (p_workspace, p_transaction, coalesce(p_product,'project_pass'), p_occurred_at,
+              -- a refund notice can arrive before the purchase notice
+              (select min(occurred_at) from entitlement_events
+                where workspace_id = p_workspace and transaction_id = p_transaction and event_type = 'PASS_REFUNDED'))
+    on conflict (transaction_id) do nothing;
+  elsif p_type = 'PASS_REFUNDED' then
+    insert into project_passes (workspace_id, transaction_id, product_id, purchased_at, refunded_at)
+      values (p_workspace, p_transaction, coalesce(p_product,'project_pass'), p_occurred_at, p_occurred_at)
+    on conflict (transaction_id) do update
+      set refunded_at = coalesce(project_passes.refunded_at, excluded.refunded_at);
+  end if;
+  return jsonb_build_object('status','recorded');
+end $$;
+
+-- ---------- what the app shows on the plan screen ----------
+create function plan_status(p_workspace uuid) returns jsonb
+language sql stable as $$
+  select jsonb_build_object(
+    'pro', workspace_is_pro(p_workspace),
+    'pro_expires_at', (select pro_expires_at from workspace_entitlements where workspace_id = p_workspace),
+    'free_limits', plan_free_limits(),
+    'free_active_projects', free_active_project_count(p_workspace, null),
+    'free_workers', (select count(*)::int from free_current_workers(p_workspace, null)),
+    'unused_passes', (select coalesce(jsonb_agg(jsonb_build_object('id', pp.id, 'purchased_at', pp.purchased_at)
+                                                order by pp.purchased_at), '[]'::jsonb)
+                      from project_passes pp
+                      where pp.workspace_id = p_workspace and pp.refunded_at is null
+                        and not exists (select 1 from projects p where p.pass_id = pp.id)))
+$$;
+
+-- Year-end totals per worker with the tax wording the app is allowed to show.
+-- Net paid = payments minus reversals by effective date (same rule as worker_year_paid),
+-- split by project use so 1099 totals only count Rental and Business projects.
+create function year_totals_with_thresholds(p_workspace uuid, p_year integer) returns jsonb
+language sql stable as $$
+  with t as (
+    select (select amount_minor from tax_thresholds where tax_year = p_year and kind = 'FORM_1099_NEC') as nec,
+           (select amount_minor from tax_thresholds where tax_year = p_year and kind = 'HOUSEHOLD_EMPLOYEE_FICA') as hh),
+  paid as (
+    select a.worker_id,
+           -sum(l.signed_delta)::bigint as net_paid_minor,
+           coalesce(-sum(l.signed_delta) filter (where p.project_use in ('RENTAL','BUSINESS')),0)::bigint as business_paid_minor,
+           coalesce(-sum(l.signed_delta) filter (where p.project_use = 'PERSONAL_HOME'),0)::bigint as personal_paid_minor
+    from ledger_events l
+    join assignments a on a.id = l.assignment_id
+    join projects p on p.id = a.project_id
+    where l.workspace_id = p_workspace
+      and l.event_type in ('PAYMENT','PAYMENT_REVERSAL')
+      and extract(year from l.effective_date)::int = p_year
+    group by a.worker_id)
+  select jsonb_build_object(
+    'year', p_year,
+    'thresholds_known', (select nec is not null and hh is not null from t),
+    'form_1099_nec_threshold_minor', (select nec from t),
+    'household_threshold_minor', (select hh from t),
+    'workers', coalesce((select jsonb_agg(jsonb_build_object(
+        'worker_id', w.id, 'name', w.display_name,
+        'net_paid_minor', pd.net_paid_minor,
+        'business_paid_minor', pd.business_paid_minor,
+        'personal_paid_minor', pd.personal_paid_minor,
+        'at_or_over_1099', (select nec from t) is not null and pd.business_paid_minor >= (select nec from t),
+        'near_household', (select hh from t) is not null and pd.personal_paid_minor * 5 >= (select hh from t) * 4)
+      order by w.display_name)
+      from paid pd join workers w on w.id = pd.worker_id and w.workspace_id = p_workspace
+      where pd.net_paid_minor <> 0), '[]'::jsonb))
+$$;
+
+-- Growth counter bump (called by the public receipt page and the footer redirect).
+create function bump_growth_counter(p_source text) returns void
+language sql as $$
+  insert into growth_counters (day, source, count) values ((now() at time zone 'UTC')::date, p_source, 1)
+  on conflict (day, source) do update set count = growth_counters.count + 1
+$$;
+
+-- =====================================================================
+-- Hardening for every SECURITY DEFINER function in this schema, including
+-- the ones from 0001: pin search_path (so a caller's objects can't stand in
+-- for ours) and remove the default EXECUTE grant to PUBLIC. The app's own
+-- database role owns these functions, so it keeps access.
+-- Call harden_definer_functions() again at the end of any later migration
+-- that adds a SECURITY DEFINER function.
+-- =====================================================================
+create function harden_definer_functions() returns integer
+language plpgsql as $$
+declare f record; n int := 0;
+begin
+  for f in select p.oid::regprocedure as sig
+           from pg_proc p where p.pronamespace = current_schema()::regnamespace and p.prosecdef
+  loop
+    execute format('alter function %s set search_path = %I, pg_temp', f.sig, current_schema());
+    execute format('revoke execute on function %s from public', f.sig);
+    n := n + 1;
+  end loop;
+  return n;
+end $$;
+select harden_definer_functions();
+```
+
+```sql
+-- =====================================================================
+-- 0004 — My crew: skills, favorites, private notes, per-project ratings,
+--        and a crew summary view.                  Baseline 1.4, Phase 2.
+-- Additive only. Loaded after 0003_plans_and_project_use.sql.
+-- Nothing here touches money. Ratings and notes are private to the owner:
+-- they never appear on receipts, statements, share links or worker exports.
+-- =====================================================================
+
+-- Skills: short labels, at most 12 per worker, each 1–30 characters, no duplicates.
+create function skills_valid(p text[]) returns boolean language sql immutable as $$
+  select p is not null
+     and cardinality(p) <= 12
+     and not exists (select 1 from unnest(p) s where s is null or length(trim(s)) not between 1 and 30 or s <> trim(s))
+     and cardinality(p) = (select count(distinct lower(s)) from unnest(p) s)
+$$;
+
+alter table workers
+  add column favorite     boolean not null default false,
+  add column skills       text[]  not null default '{}' check (skills_valid(skills)),
+  add column private_note text    check (length(private_note) <= 500);
+
+-- One rating per assignment (a worker on a project). Updating it replaces the rating.
+create table worker_ratings (
+  id            uuid primary key default gen_random_uuid(),
+  workspace_id  uuid not null,
+  assignment_id uuid not null,
+  stars         smallint not null check (stars between 1 and 5),
+  would_hire    text not null check (would_hire in ('YES','MAYBE','NO')),
+  note          text check (length(note) <= 500),
+  rated_at      timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  unique (assignment_id),
+  unique (workspace_id, id),
+  foreign key (workspace_id, assignment_id) references assignments (workspace_id, id) on delete cascade
+);
+
+-- Rate (or re-rate) a worker on a project. Not money: no ledger effect.
+create function rate_assignment(p_workspace uuid, p_assignment uuid, p_stars smallint,
+                                p_would_hire text, p_note text) returns jsonb
+language plpgsql security definer as $$
+declare v worker_ratings;
+begin
+  if not exists (select 1 from assignments where id = p_assignment and workspace_id = p_workspace) then
+    raise exception 'assignment not found' using errcode = 'P0002'; end if;
+  if p_stars is null or p_stars not between 1 and 5 then
+    raise exception 'stars must be 1 to 5' using errcode = '22023'; end if;
+  if p_would_hire is null or p_would_hire not in ('YES','MAYBE','NO') then
+    raise exception 'would_hire must be YES, MAYBE or NO' using errcode = '22023'; end if;
+  if p_note is not null and length(p_note) > 500 then
+    raise exception 'note too long' using errcode = '22023'; end if;
+  -- clock_timestamp so two ratings in one transaction still order correctly
+  insert into worker_ratings (workspace_id, assignment_id, stars, would_hire, note, updated_at)
+    values (p_workspace, p_assignment, p_stars, p_would_hire, nullif(trim(p_note), ''), clock_timestamp())
+  on conflict (assignment_id) do update
+    set stars = excluded.stars, would_hire = excluded.would_hire, note = excluded.note, updated_at = clock_timestamp()
+  returning * into v;
+  return jsonb_build_object('id', v.id, 'stars', v.stars, 'would_hire', v.would_hire);
+end $$;
+
+-- Crew summary for ONE workspace: one row per worker, everything the My crew list and
+-- worker detail need. A function (not a view) so every step is filtered by workspace first.
+-- days_worked counts active entries that are real work (not No work, not cleared).
+create index share_links_ws_worker on share_links (workspace_id, view_worker_id);
+
+create function crew_summary(p_workspace uuid)
+returns table (worker_id uuid, display_name text, status text, favorite boolean, skills text[],
+               projects_count int, days_worked int, last_worked date, working_now boolean,
+               rating_avg numeric, rating_count int, latest_would_hire text,
+               receipts_texted int, receipts_confirmed int)
+language sql stable as $$
+  with ws_assign as (
+    select a.id, a.worker_id, a.project_id, a.end_date, p.status as project_status, p.timezone
+    from assignments a join projects p on p.id = a.project_id
+    where a.workspace_id = p_workspace),
+  entries as (
+    select wa.worker_id, e.work_date
+    from ws_assign wa
+    join work_entries e on e.assignment_id = wa.id
+    join work_revisions r on r.entry_id = e.id and r.revision = e.active_revision
+    where r.input_mode not in ('NO_WORK','VOID')),
+  work as (
+    select worker_id, count(*)::int as days_worked, max(work_date) as last_worked
+    from entries group by worker_id),
+  assign as (
+    select worker_id, count(distinct project_id)::int as projects_count,
+           bool_or(project_status = 'ACTIVE'
+                   and (end_date is null or end_date >= (now() at time zone timezone)::date)) as working_now
+    from ws_assign group by worker_id),
+  ratings as (
+    select wa.worker_id,
+           round(avg(wr.stars)::numeric, 1) as rating_avg,
+           count(*)::int as rating_count,
+           (array_agg(wr.would_hire order by wr.updated_at desc))[1] as latest_would_hire
+    from worker_ratings wr join ws_assign wa on wa.id = wr.assignment_id
+    where wr.workspace_id = p_workspace
+    group by wa.worker_id),
+  links as (
+    select sl.view_worker_id as worker_id,
+           count(distinct sl.id)::int as receipts_texted,
+           count(ak.id)::int as receipts_confirmed
+    from share_links sl
+    left join acknowledgments ak on ak.share_link_id = sl.id and ak.kind = 'RECEIVED'
+    where sl.workspace_id = p_workspace and sl.target_type = 'RECEIPT'
+    group by sl.view_worker_id)
+  select w.id, w.display_name, w.status, w.favorite, w.skills,
+         coalesce(asg.projects_count, 0), coalesce(wk.days_worked, 0), wk.last_worked,
+         coalesce(asg.working_now, false),
+         r.rating_avg, coalesce(r.rating_count, 0), r.latest_would_hire,
+         coalesce(l.receipts_texted, 0), coalesce(l.receipts_confirmed, 0)
+  from workers w
+  left join assign asg on asg.worker_id = w.id
+  left join work wk on wk.worker_id = w.id
+  left join ratings r on r.worker_id = w.id
+  left join links l on l.worker_id = w.id
+  where w.workspace_id = p_workspace
+$$;
+
+-- Last rate used for a worker, to prefill "Add to a project".
+create function worker_last_rate(p_workspace uuid, p_worker uuid) returns jsonb
+language sql stable as $$
+  select jsonb_build_object('project_id', a.project_id, 'pay_basis', ra.pay_basis,
+                            'rate_minor', ra.rate_minor, 'standard_day_minutes', ra.standard_day_minutes,
+                            'effective_from', ra.effective_from)
+  from rate_agreements ra join assignments a on a.id = ra.assignment_id
+  where a.workspace_id = p_workspace and a.worker_id = p_worker
+  order by ra.effective_from desc, ra.created_at desc
+  limit 1
+$$;
+
+-- Pin search_path and remove PUBLIC execute on the new SECURITY DEFINER function(s).
+select harden_definer_functions();
+```
+
 # Appendix B: Calculation test vectors
 
 Shared by app and server test suites. Amounts in cents. One rounding step, half up.
@@ -1993,9 +2716,9 @@ Shared by app and server test suites. Amounts in cents. One rounding step, half 
 
 ## Apple App Store
 
-- Apple Developer Program membership (organization, with D-U-N-S).
+- Apple Developer Program membership (individual, enrolled 24 September 2026).
 - Built with Xcode 26 and the iOS 26 SDK (EAS build image).
-- Sign in with Apple offered alongside Google sign-in.
+- Sign in with Apple (the only sign-in on iPhone).
 - Account deletion reachable in the app.
 - App Privacy details declared:
   - Contact info (email) and user content (names, notes, photos), both linked to the user and not used for tracking.
@@ -2004,6 +2727,9 @@ Shared by app and server test suites. Amounts in cents. One rounding step, half 
 - Export compliance: standard HTTPS only (ITSAppUsesNonExemptEncryption = NO), confirmed at submission.
 - iPhone only at launch (supportsTablet false). The iPhone app runs on iPad in compatibility mode.
 - TestFlight pilot builds before review.
+- In-app purchases: Paid Apps agreement signed, banking and tax forms complete in App Store Connect; Small Business Program enrollment approved; products `pro_monthly`, `pro_annual` and `project_pass` created with review screenshots and submitted with the build.
+- Plan screen shows price, period, what's included, auto-renewal terms, and links to the privacy policy and terms of use (Apple's standard EULA is fine); a **Restore purchases** button.
+- App Privacy details add Purchases (linked to the user, not used for tracking).
 
 ## Google Play
 

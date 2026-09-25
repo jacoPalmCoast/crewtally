@@ -14,6 +14,7 @@ Your existing workers, pay, days worked and payments appear in the new app, and 
 | **B. Full history** | Every day worked and every payment | 1–2 days | You want old receipts and statements in the new app |
 
 ## Steps (both options)
+- First give the target workspace a comp plan so plan limits don't block imported history: `select record_entitlement_event(<workspace>, 'comp-migration', 'PRO_ACTIVE', null, null, null, now(), 'COMP');` run once by you in the database console (never from app code). Tag the migration tests with T37.
 1. **Export.** From the current web app, export everything it can give (CSV or JSON). Upload the files into `migration/input/` in Replit. **These are real records: never commit them to GitHub** (add `migration/input/` to `.gitignore`).
 2. **Inspect.** The Agent prints each file's columns and 5 sample rows with names masked, then proposes a mapping table. You approve the mapping in chat before anything is loaded.
 3. **Load to staging.** A script in `scripts/migrate_webapp.ts` creates a **new development workspace**, never production. It loads data only through the API's service layer and the database functions:

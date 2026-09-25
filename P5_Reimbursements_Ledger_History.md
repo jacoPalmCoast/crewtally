@@ -11,6 +11,7 @@ Everything that explains a balance. The owner can:
 - export CSV.
 
 ## Read first
+- `docs/screens/WorkHistory.png`, `Ledger.png`, `BalanceBreakdown.png`, `Reimburse.png`, `AdjustBalance.png`, `ProjectSummary.png`, `YearTotals.png`.
 - Spec section 6 (work history, ledger) and section 8 (reimbursements, adjustments).
 - `db/schema.sql`: `record_reimbursement`, `record_adjustment` and `ledger_events`.
 - `db/tests/04_reimb_adj_rest_rates.sql`, especially the reconciliation query at the end. You'll reuse it in Phase 7.
@@ -36,7 +37,7 @@ Everything that explains a balance. The owner can:
   - Stream it; don't build it in memory for large sets.
   - Columns match the screens.
   - Amounts are written as decimal strings from integer cents, like `240.00`, never floats.
-  - The first row is headers. The file name is `workpay_<kind>_<from>_<to>.csv`.
+  - The first row is headers. The file name is `crewtally_<kind>_<from>_<to>.csv`.
 - Isolation on every route.
 
 ### Mobile
@@ -97,6 +98,24 @@ Everything that explains a balance. The owner can:
 - Summary totals equal the sum of balances. Weekly buckets respect the timezone: a Sunday 11 pm entry in New York belongs to that week (T44).
 - Year totals: a payment reversed in the same year nets to zero; a payment in December 2026 reversed in January 2027 shows in both years with opposite signs (T47).
 - Isolation: another owner's project id on summary returns 404.
+
+## Additions in baseline 1.3 (build these in this phase)
+
+### Year-end totals with IRS figures
+- `GET /v1/reports/year-totals?year=` adds, from `year_totals_with_thresholds(workspace, year)`: `thresholds_known`, `form_1099_nec_threshold_minor`, `household_threshold_minor`, and per worker `business_paid_minor`, `personal_paid_minor`, `at_or_over_1099`, `near_household`.
+- Screen notes, exactly as in spec section 6 "Year-end totals" (amounts formatted from the table, never typed into the app):
+  - `at_or_over_1099`: "{name}: paid {threshold} or more on rental or business work in {year}. You may need to send a 1099-NEC. Check with the IRS or your tax preparer."
+  - `near_household`: "{name}: {80% of household figure} or more for work at your home. If you direct how and when they work, household employee rules may apply (IRS Pub. 926)." All `{…}` values come from the API; nothing is typed into the app.
+  - When `thresholds_known` is false, show no tax note at all.
+  - Keep the footer "A record of what you paid. It isn't tax advice."
+- CSV adds columns `rental_or_business_paid` and `personal_home_paid`.
+- The notes follow each project's **current** use. Changing a project's use later changes the notes for past years too; the screen says "Based on each project's current use" under the notes.
+- The app never labels anyone an employee or a contractor.
+
+### Tests
+- A worker paid $2,500 on a Business project in 2026 shows the 1099 note; the same amount on a Personal home project doesn't (T54).
+- 2025 payments use the $600 figure; a year with no row shows no note (T55).
+- The personal-home note appears at 80% of the household figure ($2,400 for 2026) and not below.
 
 ## Proof to paste at the gate
 - The ledger SQL, including the running balance and pagination.
