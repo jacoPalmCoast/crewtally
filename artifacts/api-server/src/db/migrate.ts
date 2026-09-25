@@ -48,8 +48,16 @@ if (process.env.CREWTALLY_RUN_MIGRATIONS === "1") {
   migrate().then(count => {
     process.stdout.write(`Migrations applied: ${count}\n`);
     return pool.end();
-  }).catch(() => {
-    process.stderr.write("Migration failed\n");
+  }).catch((error: unknown) => {
+    const firstLine = error instanceof Error ? error.message.split(/\r?\n/, 1)[0] : "Unknown error";
+    // Never echo a connection string, credential, or SQL fragment from an arbitrary error message.
+    const unsafe = /(?:postgres(?:ql)?:\/\/|password|DATABASE_URL|connection\s*string|\b(?:select|insert|update|delete|create|alter|drop|truncate)\b)/i;
+    const message = firstLine && !unsafe.test(firstLine)
+      ? firstLine.slice(0, 240)
+      : "Error message redacted";
+    const rawCode = error && typeof error === "object" && "code" in error ? error.code : undefined;
+    const code = typeof rawCode === "string" && /^[A-Z0-9]{5}$/.test(rawCode) ? ` (SQLSTATE ${rawCode})` : "";
+    process.stderr.write(`Migration failed: ${message}${code}\n`);
     process.exitCode = 1;
     void pool.end();
   });
