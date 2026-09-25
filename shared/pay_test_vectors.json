@@ -1,0 +1,197 @@
+{
+  "note": "Same vectors as db/tests/01_pay_vectors.sql. Portion is a decimal string with at most 4 places. Amounts in cents.",
+  "vectors": [
+    {
+      "id": "V01",
+      "basis": "DAY",
+      "rate_minor": 24000,
+      "mode": "DAY_PORTION",
+      "portion": "1",
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 24000
+    },
+    {
+      "id": "V02",
+      "basis": "DAY",
+      "rate_minor": 24000,
+      "mode": "DAY_PORTION",
+      "portion": "0.5",
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 12000
+    },
+    {
+      "id": "V03",
+      "basis": "DAY",
+      "rate_minor": 18000,
+      "mode": "DAY_PORTION",
+      "portion": "0.25",
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 4500
+    },
+    {
+      "id": "V04",
+      "basis": "DAY",
+      "rate_minor": 18000,
+      "mode": "DAY_PORTION",
+      "portion": "0.75",
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 13500
+    },
+    {
+      "id": "V05",
+      "basis": "DAY",
+      "rate_minor": 25000,
+      "mode": "DAY_PORTION",
+      "portion": "0.3333",
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 8333
+    },
+    {
+      "id": "V06",
+      "basis": "DAY",
+      "rate_minor": 24000,
+      "mode": "DAY_MINUTES",
+      "portion": null,
+      "minutes": 180,
+      "standard_day_minutes": 480,
+      "earned_minor": 9000
+    },
+    {
+      "id": "V07",
+      "basis": "DAY",
+      "rate_minor": 20000,
+      "mode": "DAY_MINUTES",
+      "portion": null,
+      "minutes": 300,
+      "standard_day_minutes": 450,
+      "earned_minor": 13333
+    },
+    {
+      "id": "V08",
+      "basis": "DAY",
+      "rate_minor": 24000,
+      "mode": "NO_WORK",
+      "portion": null,
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 0
+    },
+    {
+      "id": "V09",
+      "basis": "HOUR",
+      "rate_minor": 3000,
+      "mode": "HOUR_MINUTES",
+      "portion": null,
+      "minutes": 450,
+      "standard_day_minutes": null,
+      "earned_minor": 22500
+    },
+    {
+      "id": "V10",
+      "basis": "HOUR",
+      "rate_minor": 2750,
+      "mode": "HOUR_MINUTES",
+      "portion": null,
+      "minutes": 80,
+      "standard_day_minutes": null,
+      "earned_minor": 3667
+    },
+    {
+      "id": "V11",
+      "basis": "HOUR",
+      "rate_minor": 2250,
+      "mode": "HOUR_MINUTES",
+      "portion": null,
+      "minutes": 15,
+      "standard_day_minutes": null,
+      "earned_minor": 563
+    },
+    {
+      "id": "V12",
+      "basis": "HOUR",
+      "rate_minor": 1875,
+      "mode": "HOUR_MINUTES",
+      "portion": null,
+      "minutes": 50,
+      "standard_day_minutes": null,
+      "earned_minor": 1563
+    },
+    {
+      "id": "V13",
+      "basis": "HOUR",
+      "rate_minor": 4500,
+      "mode": "HOUR_MINUTES",
+      "portion": null,
+      "minutes": 600,
+      "standard_day_minutes": null,
+      "earned_minor": 45000
+    },
+    {
+      "id": "V14",
+      "basis": "HOUR",
+      "rate_minor": 3000,
+      "mode": "NO_WORK",
+      "portion": null,
+      "minutes": null,
+      "standard_day_minutes": null,
+      "earned_minor": 0
+    }
+  ],
+  "invalid": [
+    {
+      "basis": "HOUR",
+      "mode": "DAY_PORTION",
+      "portion": "0.5"
+    },
+    {
+      "basis": "DAY",
+      "mode": "HOUR_MINUTES",
+      "minutes": 60
+    },
+    {
+      "basis": "DAY",
+      "mode": "DAY_MINUTES",
+      "minutes": 60,
+      "standard_day_minutes": null
+    }
+  ],
+  "parse": [
+    {
+      "input": "240",
+      "cents": 24000
+    },
+    {
+      "input": "240.5",
+      "cents": 24050
+    },
+    {
+      "input": "$1,245.00",
+      "cents": 124500
+    },
+    {
+      "input": "0.07",
+      "cents": 7
+    },
+    {
+      "input": "12.345",
+      "error": true
+    },
+    {
+      "input": "-5",
+      "error": true
+    },
+    {
+      "input": "abc",
+      "error": true
+    },
+    {
+      "input": "",
+      "error": true
+    }
+  ]
+}

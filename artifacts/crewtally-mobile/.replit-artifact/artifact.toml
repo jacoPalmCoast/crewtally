@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "CrewTally"
+description = "iPhone foundation for recording direct worker pay, with four empty navigation tabs and API diagnostics."
+version = "1.0.0"
+id = "artifacts/crewtally-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 18359
+
+[services.development]
+run = "pnpm --filter @workspace/crewtally-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/crewtally-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/crewtally-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "18359"
+BASE_PATH = "/"

@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "dev": "bash -c 'PORT=${API_PORT:-8080} pnpm --filter @workspace/api-server run dev & api=$!; PORT=${EXPO_PORT:-8081} pnpm --filter @workspace/crewtally-mobile run dev & mobile=$!; trap \"kill $api $mobile 2>/dev/null || true\" EXIT; wait -n $api $mobile'",
+    "test:db": "bash db/run_db_tests.sh",
+    "test:server": "pnpm --filter @workspace/api-server run test",
+    "test:mobile": "pnpm --filter @workspace/crewtally-mobile run test:mobile",
+    "test": "npm run test:db && npm run test:server && npm run test:mobile",
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",

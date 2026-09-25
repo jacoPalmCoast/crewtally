@@ -1,0 +1,11 @@
+{
+  "name": "@workspace/crewtally-shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./money": "./money.ts",
+    "./pay": "./pay.ts",
+    "./pay_test_vectors.json": "./pay_test_vectors.json"
+  }
+}

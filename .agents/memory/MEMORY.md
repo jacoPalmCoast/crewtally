@@ -1,0 +1,1 @@
+- [Bundled CLI guards](bundled-cli-guards.md) — a bundled server entry can make imported modules look like the main script; explicit CLI flags avoid accidental side effects.
