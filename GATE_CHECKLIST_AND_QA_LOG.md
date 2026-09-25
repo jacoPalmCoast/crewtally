@@ -43,7 +43,7 @@ What I check every time:
 
 | Date | Phase | Suites (db/server/mobile) | Review verdict | Phone check | Findings (B/M/m) | Done? |
 |---|---|---|---|---|---|---|
-| | P0 | | | | | |
+| 2026-09-24 | P0 | 8 DB files / 32 server / 8 mobile | PASS | PASS — Expo Go opens; four tabs; dark mode follows system; Diagnostics API status ok; nothing cut off at largest accessibility text size | Fixes A–E applied; see notes below | PASS |
 | | P1 | | | | | |
 | | P2 | | | | | |
 | | P3 | | | | | |
@@ -52,6 +52,14 @@ What I check every time:
 | | P6 | | | | | |
 | | P7 | | | | | |
 | | P8 | | | | | |
+
+### Phase 0 — 2026-09-24
+
+- **Result:** PASS (review and owner's iPhone check).
+- **Tests:** 8 DB files, 32 server tests, 8 mobile tests.
+- **Fixes:** A–E applied.
+- **Deviations:** Project uses the `artifacts/` folder layout and the `/api/v1` API prefix. The Phase 6 public page must be served at `/r/:token` outside `/api`.
+- **Open items:** React Native DevTools reports a `libdbus-1.so.3` warning; add real-error tests for `55000` in Phase 2 and `40001` in Phase 3.
 
 ### Findings
 
