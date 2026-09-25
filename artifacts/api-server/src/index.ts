@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { migrate } from "./db/migrate";
+import { migrate, safeMigrationError } from "./db/migrate";
 
 const rawPort = process.env["PORT"];
 
@@ -30,7 +30,7 @@ async function start() {
   logger.info({ port }, "Server listening");
   });
 }
-start().catch(() => {
-  logger.error("startup migration failed");
+start().catch((error: unknown) => {
+  logger.error(safeMigrationError(error), "startup migration failed");
   process.exitCode = 1;
 });

@@ -12,6 +12,9 @@ const states: Record<string, { status: number; code: string; message: string }> 
 
 export function mapError(error: unknown) {
   if (error instanceof ZodError) return { status: 422, code: "INVALID_INPUT", message: "Invalid input" };
+  const type = error && typeof error === "object" && "type" in error ? error.type : null;
+  if (type === "entity.too.large") return { status: 413, code: "PAYLOAD_TOO_LARGE", message: "Request body is too large" };
+  if (type === "entity.parse.failed") return { status: 400, code: "INVALID_JSON", message: "Invalid JSON body" };
   const state = error && typeof error === "object" && "code" in error ? error.code : null;
   return (typeof state === "string" && states[state]) || {
     status: 500, code: "INTERNAL_ERROR", message: "An unexpected error occurred",

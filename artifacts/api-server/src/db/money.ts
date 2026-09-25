@@ -1,9 +1,11 @@
+import type { Pool } from "pg";
 import { pool } from "./pool";
 
 type Id = string;
 type DateString = string;
 type Json = Record<string, unknown> | unknown[];
 type Nullable<T> = T | null;
+export type ShareLinkRow = { id: string; expires_at: Date } & Record<string, unknown>;
 
 // Signatures are fixed at compile time; values always travel as bound parameters.
 const signatures = {
@@ -78,7 +80,10 @@ export const money = {
 
 // Only the public receipt flow may call these with a SHA-256 token digest.
 export const shareLinks = {
-  open: (tokenSha256: Buffer) => call<Json>("open_share_link", [tokenSha256]),
+  open: async (tokenSha256: Buffer, db: Pool = pool): Promise<ShareLinkRow | null> => {
+    const result = await db.query<ShareLinkRow>("select * from open_share_link($1::bytea)", [tokenSha256]);
+    return result.rows[0] ?? null;
+  },
   acknowledge: (tokenSha256: Buffer, kind: string, typedName: Nullable<string>, note: Nullable<string>) =>
     call<Json>("acknowledge_share_link", [tokenSha256, kind, typedName, note]),
 };

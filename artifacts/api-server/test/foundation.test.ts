@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import express from "express";
 import request from "supertest";
 import pg from "pg";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, writeFile, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,6 +10,7 @@ import app, { errorHandler } from "../src/app";
 import router from "../src/routes";
 import { migrate } from "../src/db/migrate";
 import { pool } from "../src/db/pool";
+import { shareLinks } from "../src/db/money";
 
 if (process.env.APP_ENV === "production") throw new Error("Refusing database tests in production");
 
@@ -34,6 +35,43 @@ describe("Phase 0 API", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: "ok", db: "ok", migrations: expect.any(Number) });
     expect(res.headers["x-correlation-id"]).toMatch(/^[a-f0-9-]{36}$/);
+  });
+
+  it("returns a share-link row from open_share_link in the isolated schema", async () => {
+    const workspaceId = randomUUID();
+    const tokenHash = createHash("sha256").update(randomUUID()).digest();
+    await isolated.query(
+      "insert into workspaces (id, owner_id, name) values ($1, $2, $3)",
+      [workspaceId, randomUUID(), "Share link test"],
+    );
+    const inserted = await isolated.query<{ id: string; expires_at: Date }>(
+      `insert into share_links (workspace_id, target_type, target_id, view, view_worker_id, token_hash, expires_at)
+       values ($1, 'RECEIPT', $2, 'WORKER', $3, $4, now() + interval '30 days')
+       returning id, expires_at`,
+      [workspaceId, randomUUID(), randomUUID(), tokenHash],
+    );
+    const opened = await shareLinks.open(tokenHash, isolated);
+    expect(opened).toEqual(expect.objectContaining({
+      id: inserted.rows[0]!.id,
+      expires_at: expect.any(Date),
+    }));
+    expect(opened?.expires_at).toEqual(inserted.rows[0]!.expires_at);
+  });
+
+  it("maps oversized and malformed JSON bodies without exposing parser details", async () => {
+    const cases = [
+      { body: JSON.stringify({ payload: "x".repeat(1_100_000) }), status: 413, code: "PAYLOAD_TOO_LARGE" },
+      { body: '{"broken":', status: 400, code: "INVALID_JSON" },
+    ];
+    for (const { body, status, code } of cases) {
+      const res = await request(app).post("/v1/health").set("Content-Type", "application/json").send(body);
+      expect(res.status).toBe(status);
+      expect(res.body).toEqual({ error: {
+        code, message: expect.any(String), correlationId: expect.any(String),
+      } });
+      expect(res.headers["x-correlation-id"]).toBe(res.body.error.correlationId);
+      expect(JSON.stringify(res.body)).not.toContain(body);
+    }
   });
 
   it("maps each SQLSTATE from real database function failures", async () => {
@@ -72,15 +110,19 @@ describe("Phase 0 API", () => {
     }
   });
 
-  it("smoke checks every registered GET route with an empty request", async () => {
+  it("smoke checks every registered route method with an empty request", async () => {
+    const methods = ["get", "post", "put", "patch", "delete"] as const;
     const routes = router.stack.flatMap(layer =>
       layer.route ? [{ path: layer.route.path as string, methods: layer.route.methods }]
-        : (layer.handle?.stack ?? []).flatMap((child: { route?: { path: string; methods: object } }) =>
+        : (layer.handle?.stack ?? []).flatMap((child: { route?: { path: string; methods: Record<string, boolean> } }) =>
           child.route ? [{ path: child.route.path, methods: child.route.methods }] : []));
     expect(routes.length).toBeGreaterThan(0);
     for (const route of routes) {
-      const res = await request(app).get(`/v1${route.path}`);
-      expect(res.status).toBeLessThan(500);
+      for (const method of methods) {
+        if (!route.methods[method]) continue;
+        const res = await request(app)[method](`/v1${route.path}`).send(method === "get" ? undefined : {});
+        expect(res.status, `${method.toUpperCase()} ${route.path}`).toBeLessThan(500);
+      }
     }
   });
 
