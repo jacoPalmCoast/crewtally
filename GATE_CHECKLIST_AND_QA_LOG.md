@@ -61,6 +61,8 @@ What I check every time:
 - **Deviations:** Project uses the `artifacts/` folder layout and the `/api/v1` API prefix. The Phase 6 public page must be served at `/r/:token` outside `/api`.
 - **Open items:** React Native DevTools reports a `libdbus-1.so.3` warning; add real-error tests for `55000` in Phase 2 and `40001` in Phase 3.
 
+2026-09-25 note: (a) Public routes: the v1.4 brief supersedes the Phase 0 note. Public pages live under /api (for example /api/r/:token) and crewtallyapp.com forwards to them; this is built in Phase 6. (b) Test count correction: Phase 0 has 7 DB test files producing 8 PASS lines, not 8 files. (c) Build pack v1.4 loaded 2026-09-25; db/provided not applied.
+
 ### Findings
 
 | # | Phase | Severity | Finding | Action | Status |
