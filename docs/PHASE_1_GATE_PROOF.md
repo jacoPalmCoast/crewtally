@@ -4,6 +4,8 @@
 
 Implementation and automated checks are complete. This is not a claim of final Phase 1 acceptance. Do not start Phase 2.
 
+Owner decision on 2026-10-01: keep proxy trust disabled and leave the per-client-IP limiter gate open until the trusted ingress contract is confirmed. This does not close or satisfy that requirement.
+
 ### Open requirements
 
 1. The trusted-ingress client-IP contract is not verified. Authentication currently limits 10 requests/minute per socket peer and ignores spoofable forwarding headers. Behind a shared reverse proxy, different phones may share a bucket. Do not enable forwarding-header trust without confirmed proxy peers/header rewrite semantics.

@@ -78,6 +78,7 @@ What I check every time:
 - **Startup:** API reports `Migrations ready` (`applied: 1`) and `Server listening` (`port: 8080`). Expo reports `Starting Metro Bundler`, `Web: http://localhost:18359`, and `Using Expo Go`. Existing optional React Native DevTools `libdbus-1.so.3` warning remains non-blocking.
 - **Types:** Shared libraries, API server, mobile and scripts type-check successfully. The unchanged canvas sandbox still fails its workspace-wide check due to incompatible duplicate React types in `calendar.tsx` and `spinner.tsx`; no sandbox changes were made.
 - **Open security gate:** Auth limiter currently counts 10 requests/minute per socket peer and rejects spoofed forwarded headers. Behind a shared ingress this can group phones together. Do not enable proxy trust without confirmed ingress peers/header semantics.
+- **Owner decision (2026-10-01):** Keep proxy trust disabled and leave the per-client-IP limiter gate open. This is an accepted open item, not proof that per-phone-IP limiting is implemented.
 - **Open phone gate:** Native Apple nonce behavior, Apple button, kill/relaunch persistence, same workspace after signout/signin, and actual same-screen restoration require an iPhone check.
 - **Assumptions:** `/me.locale` is fixed to `en-US` for the English-only Phase 1 app; locale settings are not added. Account omits later-phase payer-name/export/delete actions. No Phase 2 work started.
 
