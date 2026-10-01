@@ -44,6 +44,20 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
+export type UnauthorizedEvent = { status: 401; url: string; method: string; token: string | null };
+export type UnauthorizedHandler = (event: UnauthorizedEvent) => void;
+
+let _unauthorizedHandler: UnauthorizedHandler | null = null;
+
+/**
+ * Register one shared handler invoked for every 401 response, except from
+ * the Apple sign-in endpoint (an invalid login is not an expired session).
+ * The event carries the token the failed request was sent with, never logged.
+ */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  _unauthorizedHandler = handler;
+}
+
 function isRequest(input: RequestInfo | URL): input is Request {
   return typeof Request !== "undefined" && input instanceof Request;
 }
@@ -351,9 +365,11 @@ export async function customFetch<T = unknown>(
 
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
+  let sentToken: string | null = null;
   if (_authTokenGetter && !headers.has("authorization")) {
     const token = await _authTokenGetter();
     if (token) {
+      sentToken = token;
       headers.set("authorization", `Bearer ${token}`);
     }
   }
@@ -364,6 +380,13 @@ export async function customFetch<T = unknown>(
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
+    if (response.status === 401 && _unauthorizedHandler && !requestInfo.url.includes("/auth/apple")) {
+      try {
+        _unauthorizedHandler({ status: 401, url: requestInfo.url, method, token: sentToken });
+      } catch {
+        // A handler failure must never mask the original API error.
+      }
+    }
     throw new ApiError(response, errorData, requestInfo);
   }
 

@@ -126,4 +126,4 @@ When the phase is built:
 
 ## Current phase
 
-Phase 0 passed review and the owner's iPhone check on 2026-09-24. Phase 1 is next, but do not start it until the owner provides the Apple Developer membership and Sign in with Apple key through the appropriate secrets flow and pastes the Phase 1 prompt.
+Phase 0 passed review and the owner's iPhone check on 2026-09-24. Phase 1 implementation and automated checks are complete, but its gate remains open pending a confirmed trusted-ingress client-IP contract and the owner's real-iPhone Apple sign-in/nonce, relaunch, and same-workspace checks. Proxy headers are not trusted by default. Do not start Phase 2 until the owner reviews Phase 1 and pastes its prompt.

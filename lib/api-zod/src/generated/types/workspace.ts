@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: 'ok';
-  db: 'ok';
-  /** @minimum 0 */
-  migrations: number;
+export interface Workspace {
+  id: string;
+  name: 'My workspace';
+  currency: 'USD';
+  locale: 'en-US';
 }

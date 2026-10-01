@@ -65,6 +65,22 @@ What I check every time:
 
 ### Findings
 
+### Phase 1 — 2026-10-01 (gate open)
+
+- **Result:** Automated suites pass; gate remains open for trusted-ingress client-IP configuration and real-iPhone acceptance.
+- **Tests:** 7 unchanged DB SQL files produce 8 PASS lines; 4 server test files / 70 tests pass; 3 mobile test files / 31 tests pass. Commands exit successfully; no tests skipped, weakened or deleted.
+- **Migration:** Only additive `0002_auth.sql` was added and applied. Ledger contains `0001_schema.sql` and `0002_auth.sql`. `db/schema.sql`, migration 0001, provided tests, money helpers and `db/provided` are unchanged.
+- **Server proof:** JWT/JWKS verification, issuer/audience/expiry/signature/SHA-256 hex nonce, five-minute ES256 client secret, encrypted refresh credentials, session hashing/sliding expiry, middleware, signout and tenancy harness are included in `docs/PHASE_1_GATE_PROOF.md`.
+- **Isolation:** Two owners receive only their own `/me` workspace; test-only ID route returns 404 across workspaces for GET/POST/PUT/PATCH/DELETE. Unauthenticated protected routes return 401.
+- **Development:** Attempts the Apple code exchange; only a failed development exchange logs `apple_exchange=skipped_dev` and continues after successful identity verification. Production fails closed.
+- **Mobile:** SecureStore-only persistence, no Apple scopes, expired-session notice and same-owner route resume, account signout, workspace ID diagnostics. Storage/cache cleanup is serialized before a fresh sign-in.
+- **Browser check:** Settled sign-in screen renders at 402×874; anonymous `/account` redirects to `/sign-in`. Web does not offer fake Apple authentication. Native Apple flows were not tested by the browser.
+- **Startup:** API reports `Migrations ready` (`applied: 1`) and `Server listening` (`port: 8080`). Expo reports `Starting Metro Bundler`, `Web: http://localhost:18359`, and `Using Expo Go`. Existing optional React Native DevTools `libdbus-1.so.3` warning remains non-blocking.
+- **Types:** Shared libraries, API server, mobile and scripts type-check successfully. The unchanged canvas sandbox still fails its workspace-wide check due to incompatible duplicate React types in `calendar.tsx` and `spinner.tsx`; no sandbox changes were made.
+- **Open security gate:** Auth limiter currently counts 10 requests/minute per socket peer and rejects spoofed forwarded headers. Behind a shared ingress this can group phones together. Do not enable proxy trust without confirmed ingress peers/header semantics.
+- **Open phone gate:** Native Apple nonce behavior, Apple button, kill/relaunch persistence, same workspace after signout/signin, and actual same-screen restoration require an iPhone check.
+- **Assumptions:** `/me.locale` is fixed to `en-US` for the English-only Phase 1 app; locale settings are not added. Account omits later-phase payer-name/export/delete actions. No Phase 2 work started.
+
 | # | Phase | Severity | Finding | Action | Status |
 |---|---|---|---|---|---|
 | | | | | | |

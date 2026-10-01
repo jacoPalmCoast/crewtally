@@ -3,15 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CrewTally API
 servers:
   - url: /api
-    description: Base API path
+    description: Replit API proxy prefix
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and session operations
+  - name: account
+    description: Authenticated account operations
 paths:
-  /healthz:
+  /v1/health:
     get:
       operationId: healthCheck
       tags: [health]
@@ -24,13 +28,212 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /v1/auth/apple:
+    post:
+      operationId: signInWithApple
+      tags: [auth]
+      summary: Verify Apple sign-in and create a session
+      description: Verifies the Apple identity token and issues an opaque CrewTally session token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppleSignInRequest"
+      responses:
+        "200":
+          description: Session created
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppleSignInResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  /v1/auth/signout:
+    post:
+      operationId: signOut
+      tags: [auth]
+      summary: Revoke the caller's session
+      description: Revokes only the session associated with the presented bearer token.
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Session revoked
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-store
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /v1/me:
+    get:
+      operationId: getMe
+      tags: [account]
+      summary: Get the authenticated owner and workspace
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current account
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
   schemas:
     HealthStatus:
       type: object
       properties:
         status:
           type: string
-      required:
-        - status
-
+          const: ok
+        db:
+          type: string
+          const: ok
+        migrations:
+          type: integer
+          minimum: 0
+      required: [status, db, migrations]
+      additionalProperties: false
+    AppleSignInRequest:
+      type: object
+      properties:
+        identityToken:
+          type: string
+          minLength: 1
+          maxLength: 16384
+        authorizationCode:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        rawNonce:
+          type: string
+          minLength: 43
+          maxLength: 43
+          pattern: "^[A-Za-z0-9_-]{43}$"
+      required: [identityToken, authorizationCode, rawNonce]
+      additionalProperties: false
+    AppleSignInResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+          minLength: 43
+          maxLength: 43
+        workspace:
+          $ref: "#/components/schemas/Workspace"
+        user:
+          $ref: "#/components/schemas/User"
+      required: [sessionToken, workspace, user]
+      additionalProperties: false
+    MeResponse:
+      type: object
+      properties:
+        workspace:
+          $ref: "#/components/schemas/Workspace"
+        user:
+          $ref: "#/components/schemas/User"
+      required: [workspace, user]
+      additionalProperties: false
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          const: My workspace
+        currency:
+          type: string
+          const: USD
+        locale:
+          type: string
+          const: en-US
+      required: [id, name, currency, locale]
+      additionalProperties: false
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+      required: [id]
+      additionalProperties: false
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            correlationId:
+              type: string
+              format: uuid
+          required: [code, message, correlationId]
+          additionalProperties: false
+      required: [error]
+      additionalProperties: false
+  responses:
+    BadRequest:
+      description: Malformed or invalid input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Invalid identity or session
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Too many authentication requests from this IP
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServerError:
+      description: Safe server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { ApiError, getAppVersion, getHealth, type ApiResponse, type HealthResponse } from '@/lib/api';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -8,6 +10,8 @@ import { useColors } from '@/hooks/useColors';
 
 export default function MoreScreen() {
   const colors = useColors();
+  const router = useRouter();
+  const { workspace } = useAuth();
   const [health, setHealth] = useState<ApiResponse<HealthResponse> | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,11 +41,24 @@ export default function MoreScreen() {
 
   return (
     <Screen title="More">
+      <View style={[styles.card, styles.accountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Pressable
+          accessibilityRole="button"
+          testID="more-account"
+          onPress={() => router.push('/account' as never)}
+          style={styles.row}
+        >
+          <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>Account</Text>
+          <Feather accessible={false} name="chevron-right" size={20} color={colors.mutedForeground} />
+        </Pressable>
+      </View>
       <Text accessibilityRole="header" allowFontScaling style={[styles.sectionTitle, { color: colors.foreground }]}>
         Diagnostics
       </Text>
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <DiagnosticRow label="App version" value={getAppVersion()} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <DiagnosticRow label="Workspace" value={workspace ? workspace.id.slice(0, 8) : 'Unknown'} />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.row}>
           <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>API status</Text>
@@ -114,6 +131,9 @@ function DiagnosticRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  accountCard: {
+    marginBottom: 24,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',

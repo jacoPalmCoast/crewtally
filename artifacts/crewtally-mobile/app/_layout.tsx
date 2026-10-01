@@ -11,18 +11,44 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { configureApiClient } from '@/lib/authEvents';
 import * as SplashScreen from 'expo-splash-screen';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+configureApiClient();
+
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const { status, pendingRoute, rememberRoute, consumePendingRoute } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const signedIn = status === 'signedIn';
+
+  useEffect(() => {
+    rememberRoute(pathname);
+  }, [pathname, rememberRoute]);
+
+  useEffect(() => {
+    if (signedIn && pendingRoute) {
+      const route = consumePendingRoute();
+      if (route) router.replace(route as never);
+    }
+  }, [signedIn, pendingRoute, consumePendingRoute, router]);
+
   return (
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Protected guard={signedIn}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="account" options={{ title: 'Account', headerBackTitle: 'More' }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!signedIn}>
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+      </Stack.Protected>
     </Stack>
   );
 }
@@ -49,7 +75,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <AuthProvider>
+                <RootLayoutNav />
+              </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

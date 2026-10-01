@@ -6,9 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: 'ok';
-  db: 'ok';
-  /** @minimum 0 */
-  migrations: number;
+export interface User {
+  id: string;
 }

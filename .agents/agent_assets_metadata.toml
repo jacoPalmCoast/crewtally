@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "hgu9Fgdb0WrDot87mi7lh"
+uri = "file://docs/PHASE_1_GATE_PROOF.md"
+type = "text"
+title = "Phase 1 gate evidence — open items"
+description = "Actual verification, config, encryption, session SQL and middleware code; every test result and changed file; migration/isolation proof and remaining gates."
+logical_id = "e24fc7a1-68ba-4528-964c-d79eb845d966"
+content_hash = "sha256:8e7a9be0f0f6aa83c34d98a95846f931fbf12be70d22914bfcc47fa14485a67b"
+size = 43518
+mtime_ms = 1790875249359
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:d545b864-b445-49e9-8fb5-949b581421df/e24fc7a1-68ba-4528-964c-d79eb845d966/47140799-3b39-4e3a-9c5e-0dc8678546d3"
+storage_version_token = "1790875250077646"
+content_type = "text/markdown"

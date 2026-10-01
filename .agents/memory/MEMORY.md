@@ -1,1 +1,2 @@
 - [Bundled CLI guards](bundled-cli-guards.md) — a bundled server entry can make imported modules look like the main script; explicit CLI flags avoid accidental side effects.
+- [Query cache test lifecycle](query-cache-test-lifecycle.md) — Jest can print PASS while query-cache GC timers keep it alive; test fixtures must clear their clients.

@@ -1,4 +1,7 @@
 import Constants from 'expo-constants';
+import { healthCheck } from '@workspace/api-client-react';
+import { reportUnauthorized } from './authEvents';
+import { peekToken } from './sessionStore';
 
 export interface ApiErrorBody {
   error: {
@@ -103,12 +106,14 @@ async function responseError(response: Response, headerCorrelationId?: string): 
 export async function requestJson<T>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
   const baseUrl = getApiBaseUrl();
   let response: Response;
+  const token = peekToken();
   try {
     response = await fetch(`${baseUrl}${path}`, {
       ...init,
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
     });
@@ -117,15 +122,38 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
   }
 
   const correlationId = response.headers.get('X-Correlation-Id') ?? undefined;
-  if (!response.ok) throw await responseError(response, correlationId);
+  if (!response.ok) {
+    if (response.status === 401 && !path.startsWith('/auth/apple')) reportUnauthorized({ token });
+    throw await responseError(response, correlationId);
+  }
   return {
     data: (await response.json()) as T,
     correlationId,
   };
 }
 
-export function getHealth(): Promise<ApiResponse<HealthResponse>> {
-  return requestJson<HealthResponse>('/health');
+/** Maps a generated-client error onto this app's error types. */
+export function toApiError(caught: unknown): ApiError {
+  if (caught instanceof ApiError) return caught;
+  const e = caught as { name?: string; status?: unknown; data?: unknown; headers?: Headers } | null;
+  if (e && e.name === 'ApiError' && typeof e.status === 'number') {
+    const payload = (e.data as Partial<ApiErrorBody> | null)?.error;
+    const correlationId = payload?.correlationId ?? e.headers?.get?.('X-Correlation-Id') ?? undefined;
+    const code = payload?.code ?? `HTTP_${e.status}`;
+    const message = payload?.message ?? `The server returned an error (${e.status}).`;
+    if (e.status === 409) return new ConflictError(code, message, correlationId);
+    if (e.status === 422) return new ValidationError(code, message, correlationId);
+    return new ApiError({ kind: 'http', status: e.status, code, message, correlationId });
+  }
+  return new NetworkError();
+}
+
+export async function getHealth(): Promise<ApiResponse<HealthResponse>> {
+  try {
+    return { data: await healthCheck() };
+  } catch (caught) {
+    throw toApiError(caught);
+  }
 }
 
 export function getAppVersion(): string {
