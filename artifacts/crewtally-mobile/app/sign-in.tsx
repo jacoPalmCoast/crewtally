@@ -13,6 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { AppleRuntimeDiagnostics } from '@/components/AppleRuntimeDiagnostics';
 import { useAuth } from '@/contexts/AuthContext';
 import { useColors } from '@/hooks/useColors';
 import { PRIVACY_URL, SUPPORT_URL } from '@/lib/links';
@@ -81,11 +82,14 @@ export default function SignInScreen() {
     );
   } else if (availability === 'unavailable') {
     action = (
-      <Text allowFontScaling style={[styles.caption, { color: colors.mutedForeground }]} testID="apple-unavailable">
-        {native
-          ? 'Sign in with Apple is unavailable on this device.'
-          : 'Sign in with Apple is available in Expo Go on iPhone. Open CrewTally there to sign in.'}
-      </Text>
+      <View style={styles.center}>
+        <Text allowFontScaling style={[styles.caption, { color: colors.mutedForeground }]} testID="apple-unavailable">
+          {native
+            ? 'Sign in with Apple is unavailable on this device.'
+            : 'Sign in with Apple is available in Expo Go on iPhone. Open CrewTally there to sign in.'}
+        </Text>
+        <AppleRuntimeDiagnostics />
+      </View>
     );
   } else if (native && availability === 'available') {
     action = (
