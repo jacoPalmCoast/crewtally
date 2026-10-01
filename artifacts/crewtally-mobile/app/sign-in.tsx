@@ -28,22 +28,33 @@ export default function SignInScreen() {
   const colors = useColors();
   const scheme = useColorScheme();
   const { status, notice, message, busy, signIn, retryRestore } = useAuth();
-  const [available, setAvailable] = useState<boolean | null>(null);
+  const [availability, setAvailability] = useState<'checking' | 'available' | 'unavailable' | 'error'>('checking');
+  const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const native = Platform.OS === 'ios';
 
   useEffect(() => {
     let live = true;
     if (!native) {
-      setAvailable(false);
+      setAvailability('unavailable');
       return;
     }
-    AppleAuthentication.isAvailableAsync()
-      .then((ok) => live && setAvailable(ok))
-      .catch(() => live && setAvailable(false));
+    setAvailability('checking');
+    void (async () => {
+      try {
+        const ok = await AppleAuthentication.isAvailableAsync();
+        if (live) setAvailability(ok ? 'available' : 'unavailable');
+      } catch (error) {
+        if (!live) return;
+        // Never log the error message, stack, credentials, or other native details.
+        const name = error instanceof Error ? error.name : 'Error';
+        console.warn(/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(name) ? name : 'Error');
+        setAvailability('error');
+      }
+    })();
     return () => {
       live = false;
     };
-  }, [native]);
+  }, [native, availabilityAttempt]);
 
   const webInset = Platform.OS === 'web' ? { paddingTop: 67, paddingBottom: 34 } : null;
 
@@ -57,15 +68,29 @@ export default function SignInScreen() {
     );
   } else if (status === 'retry') {
     action = <PrimaryButton label="Try again" onPress={retryRestore} testID="restore-retry" />;
-  } else if (available === false) {
+  } else if (availability === 'error') {
+    action = (
+      <View style={styles.center}>
+        <Text accessibilityLiveRegion="polite" allowFontScaling
+          style={[styles.error, { color: colors.destructive }]} testID="apple-availability-error">
+          Could not check Apple sign-in. Please try again.
+        </Text>
+        <PrimaryButton label="Try again" testID="apple-availability-retry"
+          onPress={() => setAvailabilityAttempt(attempt => attempt + 1)} />
+      </View>
+    );
+  } else if (availability === 'unavailable') {
     action = (
       <Text allowFontScaling style={[styles.caption, { color: colors.mutedForeground }]} testID="apple-unavailable">
-        Sign in with Apple requires an iPhone or Expo Go. Open CrewTally on your iPhone to sign in.
+        {native
+          ? 'Sign in with Apple is unavailable on this device.'
+          : 'Sign in with Apple is available in Expo Go on iPhone. Open CrewTally there to sign in.'}
       </Text>
     );
-  } else if (available) {
+  } else if (native && availability === 'available') {
     action = (
       <AppleAuthentication.AppleAuthenticationButton
+        testID="apple-sign-in"
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
         buttonStyle={
           scheme === 'dark'
