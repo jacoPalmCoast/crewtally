@@ -26,9 +26,15 @@ export interface RouterOptions {
 
 export function createRouter(options: RouterOptions = {}): IRouter {
   const db = options.db ?? pool;
+  const env = options.env ?? process.env;
   const fetcher = options.fetcher ?? fetch;
   const getConfig = options.getAuthConfig ??
     (options.env ? createAuthConfigLoader(options.env) : getDefaultAuthConfig);
+  const devSigninCode = env.APP_ENV === "development" &&
+    typeof env.DEV_SIGNIN_CODE === "string" &&
+    env.DEV_SIGNIN_CODE.length > 0
+    ? env.DEV_SIGNIN_CODE
+    : undefined;
 
   const router: IRouter = Router();
   router.use(createHealthRouter(db, logger));
@@ -37,6 +43,7 @@ export function createRouter(options: RouterOptions = {}): IRouter {
     db,
     getConfig,
     fetcher,
+    ...(devSigninCode === undefined ? {} : { devSigninCode }),
     logger: options.logger ?? logger,
   }));
 

@@ -8,6 +8,10 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async (k: string, v: string) => { store[k] = v; }),
   deleteItemAsync: jest.fn(async (k: string) => { delete store[k]; }),
 }));
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { extra: { appEnv: 'development' } } },
+}));
 jest.mock('expo-apple-authentication', () => ({ signInAsync: jest.fn(), isAvailableAsync: jest.fn(async () => true) }));
 jest.mock('expo-crypto', () => ({
   getRandomBytesAsync: jest.fn(async () => new Uint8Array(32).fill(255)),
@@ -23,7 +27,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('@workspace/api-client-react', () => ({
-  getMe: jest.fn(), signInWithApple: jest.fn(), signOut: jest.fn(), healthCheck: jest.fn(),
+  getMe: jest.fn(), signInWithApple: jest.fn(), signInDev: jest.fn(), signOut: jest.fn(), healthCheck: jest.fn(),
   setBaseUrl: jest.fn(), setAuthTokenGetter: jest.fn(), setUnauthorizedHandler: jest.fn(),
 }));
 
@@ -38,7 +42,7 @@ import { reportUnauthorized } from '@/lib/authEvents';
 import AccountScreen from '@/app/account';
 import MoreScreen from '@/app/(tabs)/more';
 
-const api = Api as unknown as Record<'getMe' | 'signInWithApple' | 'signOut' | 'healthCheck', jest.Mock>;
+const api = Api as unknown as Record<'getMe' | 'signInWithApple' | 'signInDev' | 'signOut' | 'healthCheck', jest.Mock>;
 const apple = Apple as unknown as { signInAsync: jest.Mock };
 const WS = { id: 'abcdef12-0000-4000-8000-000000000000', name: 'My workspace', currency: 'USD', locale: 'en-US' };
 const ME = { workspace: WS, user: { id: 'u1' } };
@@ -58,6 +62,7 @@ beforeEach(() => {
   api.getMe.mockResolvedValue(ME);
   apple.signInAsync.mockResolvedValue({ identityToken: 'id', authorizationCode: 'code' });
   api.signInWithApple.mockResolvedValue({ sessionToken: TOKEN, workspace: WS, user: { id: 'u1' } });
+  api.signInDev.mockResolvedValue({ sessionToken: TOKEN, workspace: WS, user: { id: 'u1' } });
   api.signOut.mockResolvedValue(undefined);
   jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -144,6 +149,46 @@ describe('sign in', () => {
     expect(h.result.current.status).toBe('signedOut');
     expect(h.result.current.message).toMatch(/saved securely/);
   });
+
+  it('developer sign-in uses the generated operation and shared secure session storage without invoking Apple', async () => {
+    const h = setup();
+    const privateCode = 'never-save-this-code';
+    await waitFor(() => expect(h.result.current.status).toBe('signedOut'));
+    let result: string | undefined;
+    await act(async () => {
+      result = await h.result.current.developerSignIn(privateCode, 'owner-b');
+    });
+    expect(result).toBe('ok');
+    expect(api.signInDev).toHaveBeenCalledWith({ code: privateCode, label: 'owner-b' });
+    expect(apple.signInAsync).not.toHaveBeenCalled();
+    expect(SecureStore.setItemAsync).toHaveBeenCalledTimes(1);
+    expect(Object.values(store)).toEqual([TOKEN]);
+    expect(JSON.stringify(store)).not.toContain(privateCode);
+    expect(JSON.stringify(qc.getQueryCache().getAll())).not.toContain(privateCode);
+    expect(JSON.stringify(qc.getMutationCache().getAll())).not.toContain(privateCode);
+    expect(h.result.current.status).toBe('signedIn');
+  });
+
+  it('developer sign-in rejects a wrong code with a safe message and no persistence or logging', async () => {
+    const h = setup();
+    const privateCode = 'wrong-private-code';
+    const warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const logger = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    await waitFor(() => expect(h.result.current.status).toBe('signedOut'));
+    api.signInDev.mockRejectedValue(Object.assign(new Error(`invalid code: ${privateCode}`), { status: 401 }));
+    let result: string | undefined;
+    await act(async () => {
+      result = await h.result.current.developerSignIn(privateCode, 'owner-a');
+    });
+    expect(result).toBe('failed');
+    expect(h.result.current.message).toBe('Developer sign-in code was not accepted. Check it and try again.');
+    expect(h.result.current.message).not.toContain(privateCode);
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    expect(store['crewtally.session.v1']).toBeUndefined();
+    expect(warning.mock.calls.flat().join(' ')).not.toContain(privateCode);
+    expect((console.error as jest.Mock).mock.calls.flat().join(' ')).not.toContain(privateCode);
+    expect(logger.mock.calls.flat().join(' ')).not.toContain(privateCode);
+  });
 });
 
 describe('launch restore', () => {
@@ -214,6 +259,22 @@ describe('later 401', () => {
     api.signInWithApple.mockResolvedValue({ sessionToken: 'N'.repeat(43), workspace: WS, user: { id: 'u2' } });
     await act(async () => { await h.result.current.signIn(); });
     expect(h.result.current.pendingRoute).toBeNull();
+  });
+
+  it('developer sign-in resumes the remembered route for the same owner after shared cleanup', async () => {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const h = await signedIn();
+    qc.setQueryData(['user-scoped'], { value: 'cached' });
+    await act(async () => { h.result.current.rememberRoute('/payments'); });
+    await act(async () => { reportUnauthorized({ token: TOKEN }); });
+    expect(qc.getQueryData(['user-scoped'])).toBeUndefined();
+    expect(AsyncStorage.clear).not.toHaveBeenCalled();
+    api.signInDev.mockResolvedValue({ sessionToken: 'D'.repeat(43), workspace: WS, user: { id: 'u1' } });
+    await act(async () => { await h.result.current.developerSignIn('owner-secret', 'owner-a'); });
+    expect(h.result.current.status).toBe('signedIn');
+    expect(h.result.current.pendingRoute).toBe('/payments');
+    expect(store['crewtally.session.v1']).toBe('D'.repeat(43));
+    expect(await AsyncStorage.getItem('draft')).toBe('keep me');
   });
 
   it('ignores a 401 carrying a stale token', async () => {

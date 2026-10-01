@@ -64,6 +64,38 @@ export const SignInWithAppleResponse = zod.object({
 
 
 /**
+ * Available only when APP_ENV is development and DEV_SIGNIN_CODE is configured.
+ * @summary Sign in as a configured development owner
+ */
+export const signInDevBodyCodeMax = 4096;
+
+
+
+export const SignInDevBody = zod.object({
+  "code": zod.string().min(1).max(signInDevBodyCodeMax),
+  "label": zod.enum(['owner-a', 'owner-b'])
+})
+
+export const signInDevResponseSessionTokenMin = 43;
+export const signInDevResponseSessionTokenMax = 43;
+
+
+
+export const SignInDevResponse = zod.object({
+  "sessionToken": zod.string().min(signInDevResponseSessionTokenMin).max(signInDevResponseSessionTokenMax),
+  "workspace": zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.literal("My workspace"),
+  "currency": zod.literal("USD"),
+  "locale": zod.literal("en-US")
+}),
+  "user": zod.object({
+  "id": zod.string().uuid()
+})
+})
+
+
+/**
  * Revokes only the session associated with the presented bearer token.
  * @summary Revoke the caller's session
  */

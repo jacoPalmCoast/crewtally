@@ -48,6 +48,7 @@ const clientSecretPair = generateKeyPairSync("ec", { namedCurve: "prime256v1" })
 const clientSecretPem = clientSecretPair.privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 const bundleId = "com.crewtallyapp.crewtally";
 const jwtKeyId = "local-apple-test-key";
+const devSigninFixtureCode = "unit-test-development-signin-code";
 let appleJwk: Record<string, unknown>;
 
 interface LogEntry {
@@ -75,15 +76,22 @@ function makeEnvironment(
     APPLE_BUNDLE_ID: bundleId,
     APPLE_AUDIENCES: audiences,
     TOKEN_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
+    ...(environment === "development" ? { DEV_SIGNIN_CODE: devSigninFixtureCode } : {}),
   };
 }
 
 function makeTestApp(
   environment: "development" | "production" = "development",
-  options: { tokenResponse?: () => Response; testRoutes?: boolean } = {},
+  options: {
+    tokenResponse?: () => Response;
+    testRoutes?: boolean;
+    devSigninCode?: string | null;
+  } = {},
 ): TestApp {
   const logs: LogEntry[] = [];
   const env = makeEnvironment(environment);
+  if (options.devSigninCode === null) delete env.DEV_SIGNIN_CODE;
+  else if (options.devSigninCode !== undefined) env.DEV_SIGNIN_CODE = options.devSigninCode;
   let jwksFetchCount = 0;
   const fetcher: typeof fetch = async (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -156,6 +164,12 @@ async function signIn(app: Express, rawNonce: string, identityToken?: string) {
       authorizationCode: `runtime-local-code-${randomUUID()}`,
       rawNonce,
     });
+}
+
+function devSignIn(app: Express, label: "owner-a" | "owner-b", code = devSigninFixtureCode, alias = false) {
+  return request(app)
+    .post(`${alias ? "/api" : ""}/v1/auth/dev`)
+    .send({ code, label });
 }
 
 beforeAll(async () => {
@@ -323,6 +337,181 @@ describe("Phase 1 auth configuration and cryptography", () => {
 });
 
 describe("Phase 1 sign-in and session routes", () => {
+  it("registers development sign-in only when enabled with a nonempty code", async () => {
+    const cases = [
+      makeTestApp("development", { devSigninCode: null }).app,
+      makeTestApp("development", { devSigninCode: "" }).app,
+      makeTestApp("production").app,
+      makeTestApp("production", { devSigninCode: devSigninFixtureCode }).app,
+    ];
+    for (const app of cases) {
+      for (const route of ["/v1/auth/dev", "/api/v1/auth/dev"]) {
+        const response = await request(app).post(route).send({
+          code: devSigninFixtureCode,
+          label: "owner-a",
+        });
+        expect(response.status).toBe(404);
+        expect(response.status).not.toBe(403);
+      }
+    }
+  });
+
+  it("creates isolated development owners through the shared session path", async () => {
+    const testApp = makeTestApp("development", { testRoutes: true });
+    const [ownerA, ownerB, ownerARepeat] = await Promise.all([
+      devSignIn(testApp.app, "owner-a"),
+      devSignIn(testApp.app, "owner-b", devSigninFixtureCode, true),
+      devSignIn(testApp.app, "owner-a"),
+    ]);
+    for (const response of [ownerA, ownerB, ownerARepeat]) {
+      expect(response.status).toBe(200);
+      expect(response.headers["cache-control"]).toBe("no-store");
+      expect(response.body).toMatchObject({
+        sessionToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+        workspace: { name: "My workspace", currency: "USD", locale: "en-US" },
+        user: { id: expect.any(String) },
+      });
+    }
+    expect(ownerA.body.user.id).toBe(ownerARepeat.body.user.id);
+    expect(ownerA.body.workspace.id).toBe(ownerARepeat.body.workspace.id);
+    expect(ownerA.body.user.id).not.toBe(ownerB.body.user.id);
+    expect(ownerA.body.workspace.id).not.toBe(ownerB.body.workspace.id);
+
+    const users = await isolated.query<{ id: string; apple_sub: string }>(
+      "SELECT id, apple_sub FROM users WHERE apple_sub = ANY($1::text[]) ORDER BY apple_sub",
+      [["dev:owner-a", "dev:owner-b"]],
+    );
+    expect(users.rows).toHaveLength(2);
+    expect(users.rows.map(row => row.apple_sub)).toEqual(["dev:owner-a", "dev:owner-b"]);
+    expect(users.rows.find(row => row.apple_sub === "dev:owner-a")!.id).toBe(ownerA.body.user.id);
+    expect(users.rows.find(row => row.apple_sub === "dev:owner-b")!.id).toBe(ownerB.body.user.id);
+
+    const workspaceCount = await isolated.query(
+      "SELECT id FROM workspaces WHERE owner_id = ANY($1::uuid[])",
+      [[ownerA.body.user.id, ownerB.body.user.id]],
+    );
+    expect(workspaceCount.rowCount).toBe(2);
+    const credentials = await isolated.query(
+      "SELECT user_id FROM apple_credentials WHERE user_id = ANY($1::uuid[])",
+      [[ownerA.body.user.id, ownerB.body.user.id]],
+    );
+    expect(credentials.rowCount).toBe(0);
+    expect(testApp.jwksFetchCount()).toBe(0);
+
+    for (const response of [ownerA, ownerB, ownerARepeat]) {
+      const token = response.body.sessionToken as string;
+      const stored = await isolated.query<{ token_hash: Buffer; session_text: string }>(
+        `SELECT token_hash, encode(token_hash, 'hex') AS session_text
+         FROM sessions WHERE token_hash = $1`,
+        [hashSessionToken(token)],
+      );
+      expect(stored.rowCount).toBe(1);
+      expect(stored.rows[0]!.token_hash).toEqual(hashSessionToken(token));
+      expect(stored.rows[0]!.session_text).not.toContain(token);
+    }
+
+    const ownerABearer = `Bearer ${ownerA.body.sessionToken}`;
+    const ownerBBearer = `Bearer ${ownerB.body.sessionToken}`;
+    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerABearer)).body.workspace.id)
+      .toBe(ownerA.body.workspace.id);
+    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerBBearer)).body.workspace.id)
+      .toBe(ownerB.body.workspace.id);
+    const foreignResource = await isolated.query<{ id: string }>(
+      "INSERT INTO test_auth_resources (workspace_id) VALUES ($1) RETURNING id",
+      [ownerB.body.workspace.id],
+    );
+    const foreignId = foreignResource.rows[0]!.id;
+    expect((await request(testApp.app).get(`/v1/test/resources/${foreignId}`)
+      .set("Authorization", ownerABearer)).status).toBe(404);
+    expect((await request(testApp.app).get(`/v1/test/resources/${foreignId}`)
+      .set("Authorization", ownerBBearer)).status).toBe(200);
+
+    const ownerASessionHash = hashSessionToken(ownerA.body.sessionToken as string);
+    await isolated.query(
+      `UPDATE sessions
+       SET last_seen_at = now() - interval '25 hours',
+           expires_at = now() + interval '1 day'
+       WHERE token_hash = $1`,
+      [ownerASessionHash],
+    );
+    const expiryBefore = await isolated.query<{ expires_at: Date }>(
+      "SELECT expires_at FROM sessions WHERE token_hash = $1",
+      [ownerASessionHash],
+    );
+    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerABearer)).status).toBe(200);
+    const expiryAfter = await isolated.query<{ expires_at: Date; last_seen_at: Date }>(
+      "SELECT expires_at, last_seen_at FROM sessions WHERE token_hash = $1",
+      [ownerASessionHash],
+    );
+    expect(expiryAfter.rows[0]!.expires_at.getTime()).toBeGreaterThan(expiryBefore.rows[0]!.expires_at.getTime());
+    expect(Date.now() - expiryAfter.rows[0]!.last_seen_at.getTime()).toBeLessThan(60_000);
+
+    const authEvents = testApp.logs.filter(entry => entry.message === "auth_dev_signin");
+    expect(authEvents.map(entry => entry.fields.label).sort()).toEqual(["owner-a", "owner-a", "owner-b"]);
+    expect(authEvents.every(entry => Object.keys(entry.fields).length === 1)).toBe(true);
+    const serializedLogs = JSON.stringify(testApp.logs);
+    for (const sensitiveValue of [
+      devSigninFixtureCode,
+      ownerA.body.sessionToken,
+      ownerB.body.sessionToken,
+      ownerARepeat.body.sessionToken,
+      "dev:owner-a",
+      "dev:owner-b",
+    ]) {
+      expect(serializedLogs).not.toContain(sensitiveValue);
+    }
+  });
+
+  it("returns one generic unauthorized response for wrong development codes without logging them", async () => {
+    const testApp = makeTestApp();
+    const usersBefore = await isolated.query<{ count: string }>(
+      "SELECT count(*) AS count FROM users WHERE apple_sub = 'dev:owner-a'",
+    );
+    const attemptedCodes = [
+      `wrong-code-${randomUUID()}`,
+      `another-wrong-code-${randomUUID()}`,
+    ];
+    const responses = await Promise.all(
+      attemptedCodes.map(code => devSignIn(testApp.app, "owner-a", code)),
+    );
+    expect(responses.map(response => response.status)).toEqual([401, 401]);
+    expect(responses.map(({ body }) => body.error.code)).toEqual(["INVALID_CREDENTIALS", "INVALID_CREDENTIALS"]);
+    expect(responses.map(({ body }) => body.error.message))
+      .toEqual(["Sign in could not be completed", "Sign in could not be completed"]);
+    const serializedLogs = JSON.stringify(testApp.logs);
+    for (const attemptedCode of [...attemptedCodes, devSigninFixtureCode]) {
+      expect(serializedLogs).not.toContain(attemptedCode);
+    }
+    expect(testApp.logs.some(entry => entry.message === "auth_dev_signin")).toBe(false);
+    const usersAfter = await isolated.query<{ count: string }>(
+      "SELECT count(*) AS count FROM users WHERE apple_sub = 'dev:owner-a'",
+    );
+    expect(usersAfter.rows[0]!.count).toBe(usersBefore.rows[0]!.count);
+  });
+
+  it("strictly validates the development sign-in body and applies the shared 10-per-minute limit", async () => {
+    const app = makeTestApp().app;
+    const invalidBodies = [
+      {},
+      { code: "", label: "owner-a" },
+      { code: "x".repeat(4097), label: "owner-a" },
+      { code: devSigninFixtureCode, label: "owner-c" },
+      { code: devSigninFixtureCode, label: "owner-a", extra: "rejected" },
+    ];
+    for (const body of invalidBodies) {
+      const response = await request(app).post("/v1/auth/dev").send(body);
+      expect(response.status).toBe(422);
+      expect(response.body.error.code).toBe("INVALID_INPUT");
+    }
+
+    const limitedApp = makeTestApp().app;
+    const responses = await Promise.all(
+      Array.from({ length: 11 }, () => devSignIn(limitedApp, "owner-a", "wrong-fixture-code")),
+    );
+    expect(responses.filter(response => response.status === 401)).toHaveLength(10);
+    expect(responses.filter(response => response.status === 429)).toHaveLength(1);
+  });
+
   it("verifies the SHA-256 hex nonce, signs in, and creates exactly one workspace", async () => {
     const testApp = makeTestApp();
     const rawNonce = nonce();

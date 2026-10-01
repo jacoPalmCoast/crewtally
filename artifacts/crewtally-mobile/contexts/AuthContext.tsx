@@ -9,6 +9,7 @@ import React, {
   type ReactNode,
 } from 'react';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
 import { useQueryClient } from '@tanstack/react-query';
 import { getMe, signInWithApple, signOut as signOutRequest } from '@workspace/api-client-react';
 import { createNoncePair } from '@/lib/appleNonce';
@@ -22,6 +23,7 @@ export const SIGN_IN_AGAIN_NOTICE = 'Please sign in again';
 
 export type SignInResult = 'ok' | 'cancelled' | 'failed';
 export type SignOutResult = 'ok' | 'failed';
+export type DeveloperSignInLabel = 'owner-a' | 'owner-b';
 
 interface AuthValue {
   status: AuthStatus;
@@ -32,6 +34,7 @@ interface AuthValue {
   busy: boolean;
   pendingRoute: string | null;
   signIn: () => Promise<SignInResult>;
+  developerSignIn: (code: string, label: DeveloperSignInLabel) => Promise<SignInResult>;
   signOut: () => Promise<SignOutResult>;
   retryRestore: () => void;
   rememberRoute: (path: string) => void;
@@ -185,6 +188,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void restore();
   }, [restore]);
 
+  const completeSignIn = useCallback(async (
+    result: Awaited<ReturnType<typeof signInWithApple>>,
+    gen: number,
+  ): Promise<SignInResult> => {
+    if (gen !== generation.current) return 'failed';
+    try {
+      await saveToken(result.sessionToken);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Your sign-in could not be saved securely.');
+      return 'failed';
+    }
+    if (gen !== generation.current) {
+      await clearToken().catch(() => undefined);
+      return 'failed';
+    }
+    const sameOwner = pendingOwner.current === result.user.id;
+    if (!sameOwner) {
+      await dropCaches();
+      pendingRef.current = null;
+      setPendingRoute(null);
+    }
+    pendingOwner.current = null;
+    ownerRef.current = result.user.id;
+    setWorkspace(result.workspace);
+    setUserId(result.user.id);
+    setNotice(null);
+    setStatus('signedIn');
+    return 'ok';
+  }, [dropCaches]);
+
   const signIn = useCallback(async (): Promise<SignInResult> => {
     if (working) return 'failed';
     setBusy(true);
@@ -216,34 +249,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMessage(safeSignInMessage(e));
         return 'failed';
       }
-      if (gen !== generation.current) return 'failed';
-      try {
-        await saveToken(result.sessionToken);
-      } catch (e) {
-        setMessage(e instanceof Error ? e.message : 'Your sign-in could not be saved securely.');
-        return 'failed';
-      }
-      if (gen !== generation.current) {
-        await clearToken().catch(() => undefined);
-        return 'failed';
-      }
-      const sameOwner = pendingOwner.current === result.user.id;
-      if (!sameOwner) {
-        await dropCaches();
-        pendingRef.current = null;
-        setPendingRoute(null);
-      }
-      pendingOwner.current = null;
-      ownerRef.current = result.user.id;
-      setWorkspace(result.workspace);
-      setUserId(result.user.id);
-      setNotice(null);
-      setStatus('signedIn');
-      return 'ok';
+      return await completeSignIn(result, gen);
     } finally {
       if (mounted.current) setBusy(false);
     }
-  }, [working, dropCaches]);
+  }, [working, completeSignIn]);
+
+  const developerSignIn = useCallback(async (
+    code: string,
+    label: DeveloperSignInLabel,
+  ): Promise<SignInResult> => {
+    if (
+      !__DEV__
+      || Constants.expoConfig?.extra?.appEnv !== 'development'
+      || working
+    ) return 'failed';
+    setBusy(true);
+    await cleanupRef.current;
+    const gen = ++generation.current;
+    setMessage(null);
+    try {
+      if (__DEV__ && Constants.expoConfig?.extra?.appEnv === 'development') {
+        let result: Awaited<ReturnType<typeof signInWithApple>>;
+        try {
+          const { requestDevSignIn } = require('@/lib/devSignInApi') as {
+            requestDevSignIn: (
+              code: string,
+              label: DeveloperSignInLabel,
+            ) => Promise<Awaited<ReturnType<typeof signInWithApple>>>;
+          };
+          result = await requestDevSignIn(code, label);
+        } catch (e) {
+          if (gen !== generation.current) return 'failed';
+          const status = statusOf(e);
+          setMessage(status === 401
+            ? 'Developer sign-in code was not accepted. Check it and try again.'
+            : status === 429
+              ? 'Too many attempts. Wait a minute and try again.'
+              : 'Developer sign-in could not finish. Please try again.');
+          return 'failed';
+        }
+        return await completeSignIn(result, gen);
+      }
+      return 'failed';
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  }, [working, completeSignIn]);
 
   const signOut = useCallback(async (): Promise<SignOutResult> => {
     const token = peekToken();
@@ -288,9 +340,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthValue>(
     () => ({
       status, workspace, userId, notice, message, busy, pendingRoute,
-      signIn, signOut, retryRestore: () => void restore(), rememberRoute, consumePendingRoute,
+      signIn, developerSignIn, signOut, retryRestore: () => void restore(), rememberRoute, consumePendingRoute,
     }),
-    [status, workspace, userId, notice, message, busy, pendingRoute, signIn, signOut, restore, rememberRoute, consumePendingRoute],
+    [status, workspace, userId, notice, message, busy, pendingRoute, signIn, developerSignIn, signOut, restore, rememberRoute, consumePendingRoute],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -23,8 +23,10 @@ import type {
   AppleSignInRequest,
   AppleSignInResponse,
   BadRequestResponse,
+  DevSignInInput,
   HealthStatus,
   MeResponse,
+  NotFoundResponse,
   RateLimitedResponse,
   ServerErrorResponse,
   UnauthorizedResponse
@@ -151,11 +153,7 @@ export const signInWithApple = async (appleSignInRequest: AppleSignInRequest, op
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
-    if (h instanceof Headers) {
-      const headers: Record<string, string> = {};
-      h.forEach((value, name) => { headers[name] = value; });
-      return headers;
-    }
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Symbol.iterator in h) {
       return Object.fromEntries(
         Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
@@ -226,6 +224,95 @@ export const useSignInWithApple = <TError = ErrorType<BadRequestResponse | Unaut
         TContext
       > => {
       return useMutation(getSignInWithAppleMutationOptions(options));
+    }
+
+export const getSignInDevUrl = () => {
+
+
+
+
+  return `/api/v1/auth/dev`
+}
+
+/**
+ * Available only when APP_ENV is development and DEV_SIGNIN_CODE is configured.
+ * @summary Sign in as a configured development owner
+ */
+export const signInDev = async (devSignInInput: DevSignInInput, options?: Parameters<typeof customFetch>[1]): Promise<AppleSignInResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AppleSignInResponse>(getSignInDevUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(devSignInInput)
+  }
+);}
+
+
+
+
+
+export const getSignInDevMutationKey = () => ['signInDev'] as const;
+
+export const getSignInDevMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | RateLimitedResponse | ServerErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signInDev>>, TError,SignInDevMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signInDev>>, TError,SignInDevMutationVariables, TContext> => {
+
+const mutationKey = getSignInDevMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signInDev>>, SignInDevMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signInDev(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignInDevMutationResult = NonNullable<Awaited<ReturnType<typeof signInDev>>>
+    export type SignInDevMutationBody = BodyType<DevSignInInput>
+    export type SignInDevMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | RateLimitedResponse | ServerErrorResponse>
+    export type SignInDevMutationVariables = {data: BodyType<DevSignInInput>}
+
+    /**
+ * @summary Sign in as a configured development owner
+ */
+export const useSignInDev = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | RateLimitedResponse | ServerErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signInDev>>, TError,SignInDevMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signInDev>>,
+        TError,
+        SignInDevMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSignInDevMutationOptions(options));
     }
 
 export const getSignOutUrl = () => {

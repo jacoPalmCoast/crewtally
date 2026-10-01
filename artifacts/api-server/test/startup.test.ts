@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { createAuthConfigLoader, loadAuthConfig } from "../src/auth/config";
-import { runApiStartup } from "../src/server/startup";
+import { runApiStartup, warnIfProductionDevSigninCodeIsSet } from "../src/server/startup";
 
 function fixtureEnv(privateKey: string): NodeJS.ProcessEnv {
   return {
@@ -16,6 +16,30 @@ function fixtureEnv(privateKey: string): NodeJS.ProcessEnv {
 }
 
 describe("startup authentication configuration", () => {
+  it("warns by configuration name in production without logging the configured value", () => {
+    const entries: { fields: Record<string, unknown>; message?: string }[] = [];
+    const fixtureCode = "production-warning-fixture-code";
+    warnIfProductionDevSigninCodeIsSet(
+      { APP_ENV: "production", DEV_SIGNIN_CODE: fixtureCode },
+      { warn: (fields, message) => entries.push({ fields, message }) },
+    );
+    expect(entries).toEqual([{
+      fields: { configuration: "DEV_SIGNIN_CODE" },
+      message: "DEV_SIGNIN_CODE is set in production and will be ignored",
+    }]);
+    expect(JSON.stringify(entries)).not.toContain(fixtureCode);
+
+    warnIfProductionDevSigninCodeIsSet(
+      { APP_ENV: "production" },
+      { warn: (fields, message) => entries.push({ fields, message }) },
+    );
+    warnIfProductionDevSigninCodeIsSet(
+      { APP_ENV: "development", DEV_SIGNIN_CODE: fixtureCode },
+      { warn: (fields, message) => entries.push({ fields, message }) },
+    );
+    expect(entries).toHaveLength(1);
+  });
+
   it("loads and caches all config before migrations and listening", async () => {
     const generated = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
     const pem = generated.privateKey.export({ type: "pkcs8", format: "pem" }).toString();

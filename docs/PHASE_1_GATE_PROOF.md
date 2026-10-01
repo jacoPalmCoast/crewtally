@@ -1,5 +1,7 @@
 # Phase 1 gate proof — 2026-10-01
 
+The original proof snapshot below predates developer sign-in. The development-sign-in addendum at the end records the latest code, test results and changed files and supersedes the earlier route implementation and counts.
+
 ## Gate status: OPEN
 
 Implementation and automated checks are complete. This is not a claim of final Phase 1 acceptance. Do not start Phase 2.
@@ -9,7 +11,7 @@ Owner decision on 2026-10-01: keep proxy trust disabled and leave the per-client
 ### Open requirements
 
 1. The trusted-ingress client-IP contract is not verified. Authentication currently limits 10 requests/minute per socket peer and ignores spoofable forwarding headers. Behind a shared reverse proxy, different phones may share a bucket. Do not enable forwarding-header trust without confirmed proxy peers/header rewrite semantics.
-2. A real iPhone must confirm Apple nonce behavior, native Apple button, kill/relaunch persistence, same workspace after signout/signin, and actual same-owner route restoration. Browser and unit tests are not phone evidence.
+2. Owner decision: Real Sign in with Apple on a device is carried to the first TestFlight build at the end of Phase 2; Expo Go 1017880 lacks the ExpoAppleAuthentication native module. Phase 1 phone session, workspace and route-restoration checks use the development-only sign-in and remain owner acceptance items. Browser and unit tests are not phone evidence.
 
 ## Gate commands and final results
 
@@ -962,3 +964,1115 @@ Git status at proof generation (M = changed, ?? = new). Build output, installed 
 ~~~
 
 Agent memory housekeeping files also updated: .agents/memory/MEMORY.md and .agents/memory/query-cache-test-lifecycle.md. The Python module transiently added by tooling was removed; .replit has no final diff.
+
+
+---
+
+## Development-sign-in addendum — latest gate, 2026-10-01
+
+Owner confirmed Expo Go 1017880 lacks ExpoAppleAuthentication. Real device Apple sign-in/nonce verification is carried to the first TestFlight build at the end of Phase 2. Developer sign-in is not proof of Apple authentication. No Phase 2 work started.
+
+POST /v1/auth/dev (and /api/v1/auth/dev) is registered only with explicit APP_ENV=development and a nonempty DEV_SIGNIN_CODE. Production and missing-code configurations have no route. Code comparison uses timingSafeEqual on equal-length SHA-256 digests; labels are strict owner-a/owner-b values. Both methods use the same transactional user/workspace/session helper. Dev users have reserved dev: subs, no exchange and no refresh credentials. Success logs contain only the fixed label and auth_dev_signin event; no code/sub/token. Production startup warns by Secret name only if configured.
+
+The mobile sheet is gated by __DEV__, the development manifest and confirmed Apple unavailability. It has secure code entry and explicit Owner A/B selection, clears the code on submit/dismiss, and does not persist it. Both methods share cleanup, generation guards, SecureStore, cache isolation and same-owner navigation.
+
+All final commands exit 0: DB 7 unchanged SQL files / 8 PASS groups; server 4 files / 75 tests; mobile 4 files / 51 tests. No test skipped, deleted or weakened. Library, API and mobile types pass. Package-scoped dom.iterable typing supports generated Headers.entries; no runtime URL/auth-hook changes or new packages.
+
+Production iOS export succeeded with APP_ENV=production and NODE_ENV=production. Hermes bytecode contains none of Developer sign-in (test only), dev-signin-sheet, dev-signin-code, dev-signin-submit, requestDevSignIn or DEV_SIGNIN_CODE. The unused generated SDK endpoint URL remains; the feature sheet/helper is stripped and server production tests prove route absence.
+
+Startup at 18:44:53 UTC: Migrations ready applied=0; Server listening port=8080. Expo session login succeeds, Metro starts in Expo Go mode, and a fresh QR is generated. Live health returns 200; POST /api/v1/auth/dev returns 404. Secret-existence check confirms DEV_SIGNIN_CODE is not set; owner must add it then restart API to mount the route. Agent has not tested phone login with that Secret. Trusted proxy/client-IP limiting remains the previously accepted open gate.
+
+The SDK57 diagnostic uses the exact native name ExpoAppleAuthentication in requireOptionalNativeModule. QA records the TestFlight deferral and optional later Touch ID/Face ID support, supportedAuthenticationTypesAsync, matching button wording, passcode fallback and home-button iPhone testing.
+
+### Every latest server test result
+
+- test/startup.test.ts > startup authentication configuration > warns by configuration name in production without logging the configured value — PASS
+- test/startup.test.ts > startup authentication configuration > loads and caches all config before migrations and listening — PASS
+- test/startup.test.ts > startup authentication configuration > loads production config before listening and does not run development migrations — PASS
+- test/startup.test.ts > startup authentication configuration > fails before migration or listen when the runtime fixture private key is invalid — PASS
+- test/shared.test.ts > protected shared pay vectors > V01 — PASS
+- test/shared.test.ts > protected shared pay vectors > V02 — PASS
+- test/shared.test.ts > protected shared pay vectors > V03 — PASS
+- test/shared.test.ts > protected shared pay vectors > V04 — PASS
+- test/shared.test.ts > protected shared pay vectors > V05 — PASS
+- test/shared.test.ts > protected shared pay vectors > V06 — PASS
+- test/shared.test.ts > protected shared pay vectors > V07 — PASS
+- test/shared.test.ts > protected shared pay vectors > V08 — PASS
+- test/shared.test.ts > protected shared pay vectors > V09 — PASS
+- test/shared.test.ts > protected shared pay vectors > V10 — PASS
+- test/shared.test.ts > protected shared pay vectors > V11 — PASS
+- test/shared.test.ts > protected shared pay vectors > V12 — PASS
+- test/shared.test.ts > protected shared pay vectors > V13 — PASS
+- test/shared.test.ts > protected shared pay vectors > V14 — PASS
+- test/shared.test.ts > protected shared pay vectors > rejects HOUR/DAY_PORTION — PASS
+- test/shared.test.ts > protected shared pay vectors > rejects DAY/HOUR_MINUTES — PASS
+- test/shared.test.ts > protected shared pay vectors > rejects DAY/DAY_MINUTES — PASS
+- test/shared.test.ts > protected shared pay vectors > parses 240 — PASS
+- test/shared.test.ts > protected shared pay vectors > parses 240.5 — PASS
+- test/shared.test.ts > protected shared pay vectors > parses $1,245.00 — PASS
+- test/shared.test.ts > protected shared pay vectors > parses 0.07 — PASS
+- test/shared.test.ts > protected shared pay vectors > parses 12.345 — PASS
+- test/shared.test.ts > protected shared pay vectors > parses -5 — PASS
+- test/shared.test.ts > protected shared pay vectors > parses abc — PASS
+- test/shared.test.ts > protected shared pay vectors > parses <blank> — PASS
+- test/shared.test.ts > protected shared pay vectors > formats integer cents — PASS
+- test/foundation.test.ts > Phase 0 API > responds with the database and migration status — PASS
+- test/foundation.test.ts > Phase 0 API > returns a share-link row from open_share_link in the isolated schema — PASS
+- test/foundation.test.ts > Phase 0 API > maps oversized and malformed JSON bodies without exposing parser details — PASS
+- test/foundation.test.ts > Phase 0 API > maps each SQLSTATE from real database function failures — PASS
+- test/foundation.test.ts > Phase 0 API > smoke checks every registered route method with an empty request — PASS
+- test/foundation.test.ts > Phase 0 API > rejects a changed migration checksum — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > loads an already formatted Apple P-256 PEM and all six Secrets — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > parses fixture config and the P-256 key once per memoized loader — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > rebuilds a space-collapsed PEM body into 64-character lines — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > normalizes escaped backslash-n sequences embedded in the PEM body — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > reports a safe private-key error for garbage without echoing the supplied value — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > rejects non-EC-P-256 Apple client keys in a safe format error — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > fails safely for every missing Secret without exposing other config values — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > rejects missing or unrecognized APP_ENV instead of allowing a development bypass — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > disallows Expo Go audiences in production — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > encrypts and decrypts refresh tokens with AES-256-GCM and rejects a tampered tag — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > creates an ES256 Apple client secret valid for exactly five minutes — PASS
+- test/auth.test.ts > Phase 1 auth configuration and cryptography > exchanges an authorization code as form data without a redirect URI — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > registers development sign-in only when enabled with a nonempty code — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > creates isolated development owners through the shared session path — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns one generic unauthorized response for wrong development codes without logging them — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > strictly validates the development sign-in body and applies the shared 10-per-minute limit — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > verifies the SHA-256 hex nonce, signs in, and creates exactly one workspace — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > reuses the same user and workspace on concurrent repeat sign-ins — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > caches the Apple JWKS response while verifying separate sign-ins — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > enforces strict auth request properties and bounded token, code, and nonce lengths — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns 401 for wrong issuer — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns 401 for wrong audience — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns 401 for expired token — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns 401 for bad signature — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns 401 for nonce mismatch — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > stores only the session SHA-256 hash and never the raw token — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > rejects expired and revoked sessions and slides an active expiry after 24 hours — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > rejects unknown or malformed bearer tokens and accepts a case-insensitive scheme — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > requires and revokes only the caller's own session on signout — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns each owner's own /me workspace and proves cross-workspace 404 behavior — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > returns 401 without a token for every registered protected v1 route — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > applies a bounded 10-per-minute auth IP limit without trusting forwarded headers — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > serves the documented health path through both v1 aliases with its existing payload — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > serves Apple sign-in, /me, and signout through the /api/v1 alias — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > fails production sign-in closed on Apple exchange errors without logging Apple response data — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > stores production Apple refresh tokens only as AES-256-GCM ciphertext — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > logs and continues after a failed development exchange — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > stores a successful development exchange refresh token encrypted — PASS
+- test/auth.test.ts > Phase 1 sign-in and session routes > never logs tokens, authorization codes, Apple sub, or private keys — PASS
+
+### Every latest mobile test result
+
+- __tests__/signInAvailability.test.tsx (5.138 s) > iOS + available shows the native Apple button — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > iOS + unavailable shows the fallback only after a false result — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > web shows the fallback without checking native Apple availability — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > a rejected availability check is visible, not silently turned into fallback, and logs only its name — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > retrying a failed check shows the native button when availability becomes true — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > a synchronous check error is visible and logs no message or stack — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > development fallback displays only requested platform, native-module and version metadata — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > development fallback reports a present native module as true — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > APP_ENV production hides diagnostics even in a development bundle and performs no native lookup — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > a production bundle hides diagnostics regardless of the manifest environment label — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > Apple availability hides the developer sign-in button — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > a production bundle hides developer sign-in regardless of a development manifest — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > the development sheet offers a secure code field and submits the selected owner through AuthContext — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > production manifest hides developer sign-in even in a development bundle — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > does not offer developer sign-in while the saved session is restoring — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > a rejected developer sign-in shows a safe error and clears the transient code from the sheet — PASS
+- __tests__/signInAvailability.test.tsx (5.138 s) > a diagnostic lookup failure is explicit and does not render or log native error details — PASS
+- __tests__/auth.test.tsx > nonce > uses 32 random bytes, base64url raw nonce and SHA-256 hex via expo-crypto — PASS
+- __tests__/auth.test.tsx > base64url > encodes 32 bytes to exactly 43 chars that round-trip to the same bytes — PASS
+- __tests__/auth.test.tsx > sign in > requests no scopes, passes the hash to Apple and the raw nonce to the API — PASS
+- __tests__/auth.test.tsx > sign in > stores the session token only in SecureStore and not in the mutation cache — PASS
+- __tests__/auth.test.tsx > sign in > treats Apple cancel as silent, not a failure — PASS
+- __tests__/auth.test.tsx > sign in > shows a safe message, never the raw exception — PASS
+- __tests__/auth.test.tsx > sign in > fails explicitly when SecureStore cannot save — PASS
+- __tests__/auth.test.tsx > sign in > developer sign-in uses the generated operation and shared secure session storage without invoking Apple — PASS
+- __tests__/auth.test.tsx > sign in > developer sign-in rejects a wrong code with a safe message and no persistence or logging — PASS
+- __tests__/auth.test.tsx > launch restore > restores a session when /me succeeds — PASS
+- __tests__/auth.test.tsx > launch restore > on 401 deletes the token and shows sign-in — PASS
+- __tests__/auth.test.tsx > launch restore > on network failure keeps the token, blocks the app and retries — PASS
+- __tests__/auth.test.tsx > launch restore > ignores an old expired restore that finishes after a fresh sign-in — PASS
+- __tests__/auth.test.tsx > later 401 > clears the session, notices, keeps AsyncStorage drafts, and resumes the route for the same owner — PASS
+- __tests__/auth.test.tsx > later 401 > drops the remembered route for a different owner — PASS
+- __tests__/auth.test.tsx > later 401 > developer sign-in resumes the remembered route for the same owner after shared cleanup — PASS
+- __tests__/auth.test.tsx > later 401 > ignores a 401 carrying a stale token — PASS
+- __tests__/auth.test.tsx > sign out > revokes on the server before clearing locally, without Apple signOut — PASS
+- __tests__/auth.test.tsx > sign out > treats a revoked 401 as already signed out — PASS
+- __tests__/auth.test.tsx > sign out > stays signed in with a clear message when the network fails — PASS
+- __tests__/auth.test.tsx > screens > Account shows Signed in with Apple and confirms before signing out — PASS
+- __tests__/auth.test.tsx > screens > Diagnostics shows first 8 chars of workspace ID, version and API status — PASS
+- __tests__/sessionRace.test.tsx > sessionStore serialization > a save queued behind a slow delete runs after it; final persisted and cached token is the new one — PASS
+- __tests__/sessionRace.test.tsx > sessionStore serialization > loadToken during a clear cannot restore the old token (started after or before) — PASS
+- __tests__/sessionRace.test.tsx > sessionStore serialization > a failed job surfaces its error and does not break later jobs — PASS
+- __tests__/sessionRace.test.tsx > sign-in vs expiry cleanup > signIn cannot complete until the expiry delete finishes, and the old delete never wipes the new token — PASS
+- __tests__/components.test.tsx > Money > formats dollars and cents and exposes a complete spoken amount — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Owed — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Settled — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Advance — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Pending — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Needs review — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Unrecorded — PASS
+- __tests__/components.test.tsx > StatusLabel > renders icon and visible text for Check not cleared — PASS
+
+### Changed files
+
+~~~text
+ M GATE_CHECKLIST_AND_QA_LOG.md
+ M artifacts/api-server/src/index.ts
+ M artifacts/api-server/src/routes/auth.ts
+ M artifacts/api-server/src/routes/index.ts
+ M artifacts/api-server/src/server/startup.ts
+ M artifacts/api-server/test/auth.test.ts
+ M artifacts/api-server/test/startup.test.ts
+ M artifacts/crewtally-mobile/__tests__/auth.test.tsx
+ M artifacts/crewtally-mobile/__tests__/signInAvailability.test.tsx
+ M artifacts/crewtally-mobile/app/sign-in.tsx
+ M artifacts/crewtally-mobile/contexts/AuthContext.tsx
+ M docs/PHASE_1_GATE_PROOF.md
+ M lib/api-client-react/src/generated/api.schemas.ts
+ M lib/api-client-react/src/generated/api.ts
+ M lib/api-client-react/tsconfig.json
+ M lib/api-spec/openapi.yaml
+ M lib/api-zod/src/generated/api.ts
+ M lib/api-zod/src/generated/types/index.ts
+ M replit.md
+?? artifacts/crewtally-mobile/components/DevSignInSheet.tsx
+?? artifacts/crewtally-mobile/lib/devSignInApi.ts
+?? lib/api-zod/src/generated/types/devSignInInput.ts
+?? lib/api-zod/src/generated/types/devSignInInputLabel.ts
+?? lib/api-zod/src/generated/types/notFoundResponse.ts
+
+~~~
+
+### Latest implementation code
+
+### artifacts/api-server/src/routes/auth.ts
+
+~~~ts
+import { Router, type IRouter } from "express";
+import {
+  SignInDevBody,
+  SignInWithAppleBody,
+  SignInWithAppleResponse,
+} from "@workspace/api-zod";
+import { createHash, timingSafeEqual } from "node:crypto";
+import type { Pool } from "pg";
+import { validate } from "../lib/validate";
+import {
+  createAppleJwks,
+  createSessionToken,
+  encryptRefreshToken,
+  exchangeAppleAuthorizationCode,
+  hashSessionToken,
+  verifyAppleIdentityToken,
+} from "../auth/apple";
+import { AuthConfigError, type AuthConfig } from "../auth/config";
+import { requireSession } from "../middlewares/session";
+
+export interface AuthRouterOptions {
+  db: Pool;
+  getConfig: () => AuthConfig;
+  fetcher: typeof fetch;
+  devSigninCode?: string;
+  logger: {
+    info: (fields: Record<string, unknown>, message?: string) => void;
+  };
+}
+
+class DeletedAccountError extends Error {
+  constructor() {
+    super("Account unavailable");
+  }
+}
+
+interface OwnerSession {
+  sessionToken: string;
+  userId: string;
+  workspaceId: string;
+  workspaceName: string;
+  currency: string;
+}
+
+async function createOwnerSession(
+  db: Pool,
+  appleSub: string,
+  refreshToken?: string,
+  tokenEncryptionKey?: Buffer,
+): Promise<OwnerSession> {
+  const sessionToken = createSessionToken();
+  const tokenHash = hashSessionToken(sessionToken);
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const userResult = await client.query<{ id: string; deleted_at: Date | null }>(
+      `INSERT INTO users (apple_sub)
+       VALUES ($1)
+       ON CONFLICT (apple_sub) DO UPDATE SET apple_sub = EXCLUDED.apple_sub
+       RETURNING id, deleted_at`,
+      [appleSub],
+    );
+    const user = userResult.rows[0]!;
+    if (user.deleted_at) throw new DeletedAccountError();
+
+    const workspaceResult = await client.query<{
+      id: string;
+      name: string;
+      currency: string;
+    }>(
+      `INSERT INTO workspaces (owner_id, name, currency_code)
+       VALUES ($1, 'My workspace', 'USD')
+       ON CONFLICT (owner_id) DO UPDATE SET owner_id = EXCLUDED.owner_id
+       RETURNING id, name, currency_code::text AS currency`,
+      [user.id],
+    );
+    const workspace = workspaceResult.rows[0]!;
+
+    if (refreshToken) {
+      if (!tokenEncryptionKey) throw new Error("Apple credential encryption unavailable");
+      const encrypted = encryptRefreshToken(refreshToken, tokenEncryptionKey, user.id);
+      await client.query(
+        `INSERT INTO apple_credentials (user_id, refresh_token_ciphertext, iv, auth_tag)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id) DO UPDATE
+           SET refresh_token_ciphertext = EXCLUDED.refresh_token_ciphertext,
+               iv = EXCLUDED.iv,
+               auth_tag = EXCLUDED.auth_tag,
+               updated_at = now()`,
+        [user.id, encrypted.ciphertext, encrypted.iv, encrypted.authTag],
+      );
+    }
+
+    await client.query(
+      `INSERT INTO sessions (user_id, token_hash, expires_at)
+       VALUES ($1, $2, now() + interval '30 days')`,
+      [user.id, tokenHash],
+    );
+    await client.query("COMMIT");
+
+    return {
+      sessionToken,
+      userId: user.id,
+      workspaceId: workspace.id,
+      workspaceName: workspace.name,
+      currency: workspace.currency,
+    };
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // Preserve only the original safe error path.
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function codesMatch(suppliedCode: string, configuredCode: string): boolean {
+  const suppliedHash = createHash("sha256").update(suppliedCode, "utf8").digest();
+  const configuredHash = createHash("sha256").update(configuredCode, "utf8").digest();
+  return timingSafeEqual(suppliedHash, configuredHash);
+}
+
+function sessionResponse(session: OwnerSession) {
+  return SignInWithAppleResponse.parse({
+    sessionToken: session.sessionToken,
+    workspace: {
+      id: session.workspaceId,
+      name: session.workspaceName,
+      currency: session.currency,
+      locale: "en-US",
+    },
+    user: { id: session.userId },
+  });
+}
+
+export function createAuthRouter(options: AuthRouterOptions): IRouter {
+  const router: IRouter = Router();
+  let jwks: ReturnType<typeof createAppleJwks> | undefined;
+  const signInBodySchema = SignInWithAppleBody.strict().refine(({ rawNonce }) => {
+    const decoded = Buffer.from(rawNonce, "base64url");
+    return decoded.byteLength === 32 && decoded.toString("base64url") === rawNonce;
+  });
+
+  router.post("/apple", validate(signInBodySchema), async (req, res, next) => {
+    let config: AuthConfig;
+    try {
+      config = options.getConfig();
+    } catch (error) {
+      if (error instanceof AuthConfigError) {
+        res.status(503).json({ error: {
+          code: "AUTH_UNAVAILABLE",
+          message: "Sign in is temporarily unavailable",
+          correlationId: res.locals.correlationId,
+        } });
+        return;
+      }
+      next(error);
+      return;
+    }
+
+    const body = req.body as {
+      identityToken: string;
+      authorizationCode: string;
+      rawNonce: string;
+    };
+    jwks ??= createAppleJwks(options.fetcher);
+
+    let appleSub: string;
+    try {
+      const identity = await verifyAppleIdentityToken(body.identityToken, body.rawNonce, config, jwks);
+      appleSub = identity.sub;
+    } catch {
+      res.status(401).json({ error: {
+        code: "INVALID_IDENTITY_TOKEN",
+        message: "Apple identity could not be verified",
+        correlationId: res.locals.correlationId,
+      } });
+      return;
+    }
+
+    let refreshToken: string | undefined;
+    try {
+      refreshToken = await exchangeAppleAuthorizationCode(body.authorizationCode, config, options.fetcher);
+    } catch {
+      if (config.appEnv === "development") {
+        options.logger.info({ apple_exchange: "skipped_dev" }, "Apple authorization-code exchange");
+      } else {
+        // Exchange failures are deliberately opaque; Apple response bodies and
+        // crypto/network error details must never be exposed or logged.
+        res.status(502).json({ error: {
+          code: "APPLE_EXCHANGE_FAILED",
+          message: "Apple sign in could not be completed",
+          correlationId: res.locals.correlationId,
+        } });
+        return;
+      }
+    }
+
+    try {
+      const session = await createOwnerSession(options.db, appleSub, refreshToken, config.tokenEncryptionKey);
+      res.status(200).json(sessionResponse(session));
+    } catch (error) {
+      if (error instanceof DeletedAccountError) {
+        res.status(401).json({ error: {
+          code: "ACCOUNT_UNAVAILABLE",
+          message: "Account unavailable",
+          correlationId: res.locals.correlationId,
+        } });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  if (options.devSigninCode !== undefined) {
+    router.post("/dev", validate(SignInDevBody.strict()), async (req, res, next): Promise<void> => {
+      const body = req.body as { code: string; label: "owner-a" | "owner-b" };
+      if (!codesMatch(body.code, options.devSigninCode!)) {
+        res.status(401).json({ error: {
+          code: "INVALID_CREDENTIALS",
+          message: "Sign in could not be completed",
+          correlationId: res.locals.correlationId,
+        } });
+        return;
+      }
+
+      try {
+        const session = await createOwnerSession(options.db, `dev:${body.label}`);
+        options.logger.info({ label: body.label }, "auth_dev_signin");
+        res.status(200).json(sessionResponse(session));
+      } catch (error) {
+        if (error instanceof DeletedAccountError) {
+          res.status(401).json({ error: {
+            code: "ACCOUNT_UNAVAILABLE",
+            message: "Account unavailable",
+            correlationId: res.locals.correlationId,
+          } });
+          return;
+        }
+        next(error);
+      }
+    });
+  }
+
+  router.post("/signout", requireSession(options.db), async (req, res, next) => {
+    const context = req.ctx!;
+    try {
+      await options.db.query(
+        `UPDATE sessions
+         SET revoked_at = COALESCE(revoked_at, now())
+         WHERE id = $1 AND user_id = $2`,
+        [context.sessionId, context.userId],
+      );
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+}
+~~~
+
+### artifacts/api-server/src/routes/index.ts
+
+~~~ts
+import { Router, type IRouter } from "express";
+import type { Pool } from "pg";
+import type { AuthConfigLoader } from "../auth/config";
+import { createAuthConfigLoader, getDefaultAuthConfig } from "../auth/config";
+import { pool } from "../db/pool";
+import { logger } from "../lib/logger";
+import { createAuthRateLimiter } from "../middlewares/auth-rate-limit";
+import { requireSession } from "../middlewares/session";
+import { createAuthRouter } from "./auth";
+import { createHealthRouter } from "./health";
+import { createMeRouter } from "./me";
+
+export interface RouterLogger {
+  info: (fields: Record<string, unknown>, message?: string) => void;
+  error: (fields: Record<string, unknown>, message?: string) => void;
+}
+
+export interface RouterOptions {
+  db?: Pool;
+  env?: NodeJS.ProcessEnv;
+  getAuthConfig?: AuthConfigLoader;
+  fetcher?: typeof fetch;
+  logger?: RouterLogger;
+  testOnlyProtectedRouter?: IRouter;
+}
+
+export function createRouter(options: RouterOptions = {}): IRouter {
+  const db = options.db ?? pool;
+  const env = options.env ?? process.env;
+  const fetcher = options.fetcher ?? fetch;
+  const getConfig = options.getAuthConfig ??
+    (options.env ? createAuthConfigLoader(options.env) : getDefaultAuthConfig);
+  const devSigninCode = env.APP_ENV === "development" &&
+    typeof env.DEV_SIGNIN_CODE === "string" &&
+    env.DEV_SIGNIN_CODE.length > 0
+    ? env.DEV_SIGNIN_CODE
+    : undefined;
+
+  const router: IRouter = Router();
+  router.use(createHealthRouter(db, logger));
+  router.use("/auth", createAuthRateLimiter());
+  router.use("/auth", createAuthRouter({
+    db,
+    getConfig,
+    fetcher,
+    ...(devSigninCode === undefined ? {} : { devSigninCode }),
+    logger: options.logger ?? logger,
+  }));
+
+  const protect = requireSession(db);
+  router.use((req, res, next) => {
+    if (req.path === "/health" || req.path.startsWith("/auth/")) {
+      next();
+      return;
+    }
+    protect(req, res, next);
+  });
+  router.use(createMeRouter(db));
+  if (options.testOnlyProtectedRouter) router.use(options.testOnlyProtectedRouter);
+  return router;
+}
+
+const router: IRouter = createRouter();
+export default router;
+
+~~~
+
+### artifacts/api-server/src/server/startup.ts
+
+~~~ts
+export interface ApiStartupSteps {
+  loadAuthConfig: () => { appEnv: "development" | "production" };
+  migrate: () => Promise<unknown>;
+  listen: () => Promise<void>;
+}
+
+export function warnIfProductionDevSigninCodeIsSet(
+  env: NodeJS.ProcessEnv,
+  log: { warn: (fields: Record<string, unknown>, message?: string) => void },
+): void {
+  if (env.APP_ENV === "production" && env.DEV_SIGNIN_CODE !== undefined) {
+    log.warn(
+      { configuration: "DEV_SIGNIN_CODE" },
+      "DEV_SIGNIN_CODE is set in production and will be ignored",
+    );
+  }
+}
+
+export async function runApiStartup(steps: ApiStartupSteps): Promise<void> {
+  const config = steps.loadAuthConfig();
+  if (config.appEnv !== "production") await steps.migrate();
+  await steps.listen();
+}
+~~~
+
+### artifacts/crewtally-mobile/contexts/AuthContext.tsx
+
+~~~ts
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
+import { useQueryClient } from '@tanstack/react-query';
+import { getMe, signInWithApple, signOut as signOutRequest } from '@workspace/api-client-react';
+import { createNoncePair } from '@/lib/appleNonce';
+import { setUnauthorizedListener } from '@/lib/authEvents';
+import { clearToken, loadToken, peekToken, saveToken } from '@/lib/sessionStore';
+
+export type AuthStatus = 'restoring' | 'retry' | 'signedOut' | 'signedIn';
+export interface AuthWorkspace { id: string; name: string; currency: string; locale: string }
+
+export const SIGN_IN_AGAIN_NOTICE = 'Please sign in again';
+
+export type SignInResult = 'ok' | 'cancelled' | 'failed';
+export type SignOutResult = 'ok' | 'failed';
+export type DeveloperSignInLabel = 'owner-a' | 'owner-b';
+
+interface AuthValue {
+  status: AuthStatus;
+  workspace: AuthWorkspace | null;
+  userId: string | null;
+  notice: string | null;
+  message: string | null;
+  busy: boolean;
+  pendingRoute: string | null;
+  signIn: () => Promise<SignInResult>;
+  developerSignIn: (code: string, label: DeveloperSignInLabel) => Promise<SignInResult>;
+  signOut: () => Promise<SignOutResult>;
+  retryRestore: () => void;
+  rememberRoute: (path: string) => void;
+  consumePendingRoute: () => string | null;
+}
+
+const AuthContext = createContext<AuthValue | null>(null);
+
+const statusOf = (e: unknown): number | undefined => {
+  const s = (e as { status?: unknown } | null)?.status;
+  return typeof s === 'number' ? s : undefined;
+};
+
+function safeSignInMessage(e: unknown): string {
+  const status = statusOf(e);
+  if (status === 429) return 'Too many attempts. Wait a minute and try again.';
+  if (status === 401) return 'Apple could not be verified. Please try again.';
+  if (status === undefined) return 'Could not connect to CrewTally. Check your connection and try again.';
+  return 'Sign in did not finish. Please try again.';
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<AuthStatus>('restoring');
+  const [workspace, setWorkspace] = useState<AuthWorkspace | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [working, setBusy] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const busy = working || cleaning;
+  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+
+  const generation = useRef(0);
+  const mounted = useRef(true);
+  const lastRoute = useRef<string | null>(null);
+  const pendingRef = useRef<string | null>(null);
+  const pendingOwner = useRef<string | null>(null);
+  const ownerRef = useRef<string | null>(null);
+  const signingOutToken = useRef<string | null>(null);
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
+
+  const dropCaches = useCallback(async () => {
+    // Only user-scoped server cache. Local drafts (AsyncStorage) are never touched.
+    await queryClientRef.current.cancelQueries();
+    queryClientRef.current.clear();
+  }, []);
+
+  // Barrier: sign-in never completes while a previous expiry/sign-out cleanup is running.
+  const cleanupRef = useRef<Promise<void>>(Promise.resolve());
+  const runCleanup = useCallback(
+    (clearing: Promise<void>): Promise<boolean> => {
+      clearing.catch(() => undefined); // observed below; avoids a transient unhandled rejection
+      const prior = cleanupRef.current;
+      setCleaning(true);
+      const p = (async () => {
+        await prior;
+        let ok = true;
+        try {
+          await dropCaches();
+        } catch {
+          ok = false;
+        }
+        try {
+          await clearing;
+        } catch {
+          ok = false;
+        }
+        if (!ok && mounted.current) setMessage('Saved sign-in could not be removed from this device.');
+        return ok;
+      })();
+      const done = p.then(() => {
+        if (cleanupRef.current === done && mounted.current) setCleaning(false);
+      });
+      cleanupRef.current = done;
+      return p;
+    },
+    [dropCaches],
+  );
+
+  const expire = useCallback(
+    async (token: string | null) => {
+      if (!token || peekToken() !== token || signingOutToken.current === token) return;
+      generation.current += 1;
+      const wasSignedIn = ownerRef.current !== null;
+      pendingRef.current = wasSignedIn ? lastRoute.current : null;
+      pendingOwner.current = wasSignedIn ? ownerRef.current : null;
+      setPendingRoute(pendingRef.current);
+      setStatus('signedOut');
+      setNotice(SIGN_IN_AGAIN_NOTICE);
+      setMessage(null);
+      const clearing = clearToken(); // cached token is dropped synchronously
+      setWorkspace(null);
+      setUserId(null);
+      ownerRef.current = null;
+      await runCleanup(clearing);
+    },
+    [runCleanup],
+  );
+  const expireRef = useRef(expire);
+  expireRef.current = expire;
+
+  useEffect(() => {
+    mounted.current = true;
+    const off = setUnauthorizedListener((report) => void expireRef.current(report.token));
+    return () => {
+      mounted.current = false;
+      off();
+    };
+  }, []);
+
+  const restore = useCallback(async () => {
+    const gen = ++generation.current;
+    setStatus('restoring');
+    setMessage(null);
+    let token: string | null;
+    try {
+      token = await loadToken();
+    } catch {
+      if (gen !== generation.current) return;
+      setStatus('retry');
+      setMessage('Your saved sign-in could not be read. Try again.');
+      return;
+    }
+    if (gen !== generation.current) return;
+    if (!token) {
+      setStatus('signedOut');
+      return;
+    }
+    try {
+      const me = await getMe();
+      if (gen !== generation.current || peekToken() !== token) return; // superseded by a newer sign-in
+      ownerRef.current = me.user.id;
+      setWorkspace(me.workspace);
+      setUserId(me.user.id);
+      setStatus('signedIn');
+    } catch (e) {
+      if (gen !== generation.current) return;
+      if (statusOf(e) === 401) {
+        await expireRef.current(token);
+        return;
+      }
+      // Network or server trouble: keep the token, block the app, offer retry.
+      setStatus('retry');
+      setMessage('Could not reach CrewTally. Your sign-in is still saved. Check your connection and try again.');
+    }
+  }, []);
+
+  useEffect(() => {
+    void restore();
+  }, [restore]);
+
+  const completeSignIn = useCallback(async (
+    result: Awaited<ReturnType<typeof signInWithApple>>,
+    gen: number,
+  ): Promise<SignInResult> => {
+    if (gen !== generation.current) return 'failed';
+    try {
+      await saveToken(result.sessionToken);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Your sign-in could not be saved securely.');
+      return 'failed';
+    }
+    if (gen !== generation.current) {
+      await clearToken().catch(() => undefined);
+      return 'failed';
+    }
+    const sameOwner = pendingOwner.current === result.user.id;
+    if (!sameOwner) {
+      await dropCaches();
+      pendingRef.current = null;
+      setPendingRoute(null);
+    }
+    pendingOwner.current = null;
+    ownerRef.current = result.user.id;
+    setWorkspace(result.workspace);
+    setUserId(result.user.id);
+    setNotice(null);
+    setStatus('signedIn');
+    return 'ok';
+  }, [dropCaches]);
+
+  const signIn = useCallback(async (): Promise<SignInResult> => {
+    if (working) return 'failed';
+    setBusy(true);
+    await cleanupRef.current;
+    const gen = ++generation.current;
+    setMessage(null);
+    try {
+      const { rawNonce, hashedNonce } = await createNoncePair();
+      let credential: AppleAuthentication.AppleAuthenticationCredential;
+      try {
+        credential = await AppleAuthentication.signInAsync({ requestedScopes: [], nonce: hashedNonce });
+      } catch (e) {
+        if ((e as { code?: string } | null)?.code === 'ERR_REQUEST_CANCELED') return 'cancelled';
+        setMessage('Sign in with Apple did not finish. Please try again.');
+        return 'failed';
+      }
+      if (!credential.identityToken || !credential.authorizationCode) {
+        setMessage('Apple did not return a sign-in. Please try again.');
+        return 'failed';
+      }
+      let result: Awaited<ReturnType<typeof signInWithApple>>;
+      try {
+        result = await signInWithApple({
+          identityToken: credential.identityToken,
+          authorizationCode: credential.authorizationCode,
+          rawNonce,
+        });
+      } catch (e) {
+        setMessage(safeSignInMessage(e));
+        return 'failed';
+      }
+      return await completeSignIn(result, gen);
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  }, [working, completeSignIn]);
+
+  const developerSignIn = useCallback(async (
+    code: string,
+    label: DeveloperSignInLabel,
+  ): Promise<SignInResult> => {
+    if (
+      !__DEV__
+      || Constants.expoConfig?.extra?.appEnv !== 'development'
+      || working
+    ) return 'failed';
+    setBusy(true);
+    await cleanupRef.current;
+    const gen = ++generation.current;
+    setMessage(null);
+    try {
+      if (__DEV__ && Constants.expoConfig?.extra?.appEnv === 'development') {
+        let result: Awaited<ReturnType<typeof signInWithApple>>;
+        try {
+          const { requestDevSignIn } = require('@/lib/devSignInApi') as {
+            requestDevSignIn: (
+              code: string,
+              label: DeveloperSignInLabel,
+            ) => Promise<Awaited<ReturnType<typeof signInWithApple>>>;
+          };
+          result = await requestDevSignIn(code, label);
+        } catch (e) {
+          if (gen !== generation.current) return 'failed';
+          const status = statusOf(e);
+          setMessage(status === 401
+            ? 'Developer sign-in code was not accepted. Check it and try again.'
+            : status === 429
+              ? 'Too many attempts. Wait a minute and try again.'
+              : 'Developer sign-in could not finish. Please try again.');
+          return 'failed';
+        }
+        return await completeSignIn(result, gen);
+      }
+      return 'failed';
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  }, [working, completeSignIn]);
+
+  const signOut = useCallback(async (): Promise<SignOutResult> => {
+    const token = peekToken();
+    if (token) {
+      signingOutToken.current = token;
+      try {
+        await signOutRequest(); // server revoke first
+      } catch (e) {
+        if (statusOf(e) !== 401) {
+          // Revoked/expired (401) means already signed out; anything else keeps the session.
+          signingOutToken.current = null;
+          setMessage('Could not sign out because CrewTally was unreachable. You are still signed in. Try again.');
+          return 'failed';
+        }
+      }
+    }
+    generation.current += 1;
+    pendingRef.current = null;
+    pendingOwner.current = null;
+    setPendingRoute(null);
+    ownerRef.current = null;
+    setNotice(null);
+    setWorkspace(null);
+    setUserId(null);
+    setStatus('signedOut');
+    const ok = await runCleanup(clearToken());
+    signingOutToken.current = null;
+    return ok ? 'ok' : 'failed';
+  }, [runCleanup]);
+
+  const rememberRoute = useCallback((path: string) => {
+    if (path && !path.startsWith('/sign-in')) lastRoute.current = path;
+  }, []);
+
+  const consumePendingRoute = useCallback(() => {
+    const route = pendingRef.current;
+    pendingRef.current = null;
+    setPendingRoute(null);
+    return route;
+  }, []);
+
+  const value = useMemo<AuthValue>(
+    () => ({
+      status, workspace, userId, notice, message, busy, pendingRoute,
+      signIn, developerSignIn, signOut, retryRestore: () => void restore(), rememberRoute, consumePendingRoute,
+    }),
+    [status, workspace, userId, notice, message, busy, pendingRoute, signIn, developerSignIn, signOut, restore, rememberRoute, consumePendingRoute],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
+}
+
+~~~
+
+### artifacts/crewtally-mobile/components/DevSignInSheet.tsx
+
+~~~ts
+import React, { useState } from 'react';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { useColors } from '@/hooks/useColors';
+import type { DeveloperSignInLabel, SignInResult } from '@/contexts/AuthContext';
+
+interface Props {
+  busy: boolean;
+  onSignIn: (code: string, label: DeveloperSignInLabel) => Promise<SignInResult>;
+}
+
+const DevSignInSheet = __DEV__
+  ? function DevSignInSheetComponent({ busy, onSignIn }: Props) {
+  const colors = useColors();
+  const [visible, setVisible] = useState(false);
+  const [code, setCode] = useState('');
+  const [label, setLabel] = useState<DeveloperSignInLabel | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const close = () => {
+    setVisible(false);
+    setCode('');
+    setLabel(null);
+    setError(null);
+  };
+
+  const submit = async () => {
+    if (!code.trim() || !label || busy) return;
+    const submittedCode = code;
+    setCode('');
+    setError(null);
+    const result = await onSignIn(submittedCode, label);
+    if (result === 'ok') {
+      close();
+    } else {
+      setError('Developer sign-in did not finish. Check the code and try again.');
+    }
+  };
+
+  const choice = (value: DeveloperSignInLabel, title: string) => {
+    const selected = label === value;
+    return (
+      <Pressable
+        accessibilityRole="radio"
+        accessibilityState={{ selected }}
+        accessibilityLabel={title}
+        key={value}
+        onPress={() => setLabel(value)}
+        testID={`dev-signin-${value}`}
+        style={[
+          styles.choice,
+          {
+            borderColor: selected ? colors.primary : colors.border,
+            backgroundColor: selected ? colors.muted : colors.background,
+          },
+        ]}
+      >
+        <Text allowFontScaling style={[styles.choiceText, { color: colors.foreground }]}>
+          {title}
+        </Text>
+      </Pressable>
+    );
+  };
+
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          setError(null);
+          setVisible(true);
+        }}
+        testID="dev-signin-button"
+        style={styles.linkButton}
+      >
+        <Text allowFontScaling style={[styles.link, { color: colors.mutedForeground }]}>
+          Developer sign-in (test only)
+        </Text>
+      </Pressable>
+      <Modal
+        animationType="slide"
+        onDismiss={close}
+        onRequestClose={close}
+        presentationStyle="pageSheet"
+        testID="dev-signin-sheet"
+        visible={visible}
+      >
+        <SafeAreaView
+          accessibilityViewIsModal
+          edges={['top', 'bottom', 'left', 'right']}
+          style={[styles.safe, { backgroundColor: colors.background }]}
+        >
+          <View style={styles.content}>
+            <View style={styles.headingRow}>
+              <Text accessibilityRole="header" allowFontScaling style={[styles.heading, { color: colors.foreground }]}>
+                Developer sign-in
+              </Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close developer sign-in" onPress={close}>
+                <Text allowFontScaling style={[styles.close, { color: colors.primary }]}>Close</Text>
+              </Pressable>
+            </View>
+            <TextInput
+              accessibilityLabel="Developer sign-in code"
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setCode}
+              placeholder="Code"
+              placeholderTextColor={colors.mutedForeground}
+              secureTextEntry
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.muted,
+                  borderColor: colors.border,
+                  color: colors.foreground,
+                },
+              ]}
+              testID="dev-signin-code"
+              value={code}
+            />
+            <View accessibilityRole="radiogroup" accessibilityLabel="Choose test owner" style={styles.choices}>
+              {choice('owner-a', 'Owner A')}
+              {choice('owner-b', 'Owner B')}
+            </View>
+            {error ? (
+              <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.destructive }]} testID="dev-signin-error">
+                {error}
+              </Text>
+            ) : null}
+            <PrimaryButton
+              disabled={busy || !code.trim() || !label}
+              label={busy ? 'Signing in…' : 'Sign in'}
+              onPress={() => void submit()}
+              testID="dev-signin-submit"
+            />
+            <Text allowFontScaling style={[styles.note, { color: colors.mutedForeground }]}>
+              Test-only access for development builds.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    </>
+  );
+  }
+  : null;
+
+export default DevSignInSheet;
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  content: { flex: 1, padding: 24, gap: 18 },
+  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heading: { fontSize: 24, fontWeight: '700' },
+  close: { fontSize: 16, textDecorationLine: 'underline' },
+  input: { minHeight: 52, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontSize: 16 },
+  choices: { flexDirection: 'row', gap: 12 },
+  choice: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  choiceText: { fontSize: 16, fontWeight: '600' },
+  error: { fontSize: 14, lineHeight: 20 },
+  note: { fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  linkButton: { minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  link: { fontSize: 14, lineHeight: 20, textDecorationLine: 'underline' },
+});
+
+~~~
+
+### artifacts/crewtally-mobile/lib/devSignInApi.ts
+
+~~~ts
+import type { signInWithApple } from '@workspace/api-client-react';
+import type { DeveloperSignInLabel } from '@/contexts/AuthContext';
+import Constants from 'expo-constants';
+
+type DevSignInRequest = (body: {
+  code: string;
+  label: DeveloperSignInLabel;
+}) => Promise<Awaited<ReturnType<typeof signInWithApple>>>;
+
+export const requestDevSignIn = __DEV__
+  && Constants.expoConfig?.extra?.appEnv === 'development'
+  ? function requestDevSignIn(code: string, label: DeveloperSignInLabel) {
+    const { signInDev } = require('@workspace/api-client-react') as {
+      signInDev: DevSignInRequest;
+    };
+    return signInDev({ code, label });
+  }
+  : null;
+
+~~~

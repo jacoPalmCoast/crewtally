@@ -31,6 +31,23 @@ export interface AppleSignInRequest {
   rawNonce: string;
 }
 
+export type DevSignInInputLabel = typeof DevSignInInputLabel[keyof typeof DevSignInInputLabel];
+
+
+export const DevSignInInputLabel = {
+  'owner-a': 'owner-a',
+  'owner-b': 'owner-b',
+} as const;
+
+export interface DevSignInInput {
+  /**
+     * @minLength 1
+     * @maxLength 4096
+     */
+  code: string;
+  label: DevSignInInputLabel;
+}
+
 export interface Workspace {
   id: string;
   name: 'My workspace';
@@ -76,6 +93,11 @@ export type BadRequestResponse = ErrorResponse;
  * Invalid identity or session
  */
 export type UnauthorizedResponse = ErrorResponse;
+
+/**
+ * Development sign-in is not enabled in this environment
+ */
+export type NotFoundResponse = ErrorResponse;
 
 /**
  * Too many authentication requests from this IP

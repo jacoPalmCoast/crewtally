@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { AppleRuntimeDiagnostics } from '@/components/AppleRuntimeDiagnostics';
@@ -28,10 +29,24 @@ const POINTS = [
 export default function SignInScreen() {
   const colors = useColors();
   const scheme = useColorScheme();
-  const { status, notice, message, busy, signIn, retryRestore } = useAuth();
+  const { status, notice, message, busy, signIn, developerSignIn, retryRestore } = useAuth();
   const [availability, setAvailability] = useState<'checking' | 'available' | 'unavailable' | 'error'>('checking');
   const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const native = Platform.OS === 'ios';
+  let DevSignInSheet: React.ComponentType<{
+    busy: boolean;
+    onSignIn: ReturnType<typeof useAuth>['developerSignIn'];
+  }> | null = null;
+  if (__DEV__) {
+    if (
+      Constants.expoConfig?.extra?.appEnv === 'development'
+      && availability === 'unavailable'
+      && status === 'signedOut'
+      && !busy
+    ) {
+      DevSignInSheet = require('@/components/DevSignInSheet').default;
+    }
+  }
 
   useEffect(() => {
     let live = true;
@@ -147,6 +162,7 @@ export default function SignInScreen() {
             </Text>
           ) : null}
           {action}
+          {DevSignInSheet ? <DevSignInSheet busy={busy} onSignIn={developerSignIn} /> : null}
           <Text allowFontScaling style={[styles.caption, { color: colors.mutedForeground }]}>
             We don't see your Apple email or name.
           </Text>

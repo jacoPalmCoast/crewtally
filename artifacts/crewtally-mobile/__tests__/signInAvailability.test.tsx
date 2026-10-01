@@ -21,12 +21,19 @@ jest.mock('expo-apple-authentication', () => ({
   AppleAuthenticationButtonType: { SIGN_IN: 0 },
   AppleAuthenticationButtonStyle: { WHITE: 0, BLACK: 1 },
 }));
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    status: 'signedOut', notice: null, message: null, busy: false,
-    signIn: jest.fn(), retryRestore: jest.fn(),
-  }),
-}));
+jest.mock('@/contexts/AuthContext', () => {
+  const state: { status: 'signedOut' | 'restoring' } = { status: 'signedOut' };
+  const developerSignIn = jest.fn();
+  const useAuth = () => ({
+    status: state.status, notice: null, message: null, busy: false,
+    signIn: jest.fn(), developerSignIn, retryRestore: jest.fn(),
+  });
+  const testApi = {
+    developerSignIn,
+    setStatus: (status: 'signedOut' | 'restoring') => { state.status = status; },
+  };
+  return { __test: testApi, useAuth };
+});
 
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { requireOptionalNativeModule } from 'expo';
@@ -34,6 +41,10 @@ import Constants from 'expo-constants';
 import { version as appleAuthenticationVersion } from 'expo-apple-authentication/package.json';
 import SignInScreen from '@/app/sign-in';
 
+const authTest = jest.requireMock('@/contexts/AuthContext').__test as {
+  developerSignIn: jest.Mock;
+  setStatus: (status: 'signedOut' | 'restoring') => void;
+};
 const check = jest.mocked(AppleAuthentication.isAvailableAsync);
 const originalPlatform = Platform.OS;
 const originalDev = __DEV__;
@@ -47,6 +58,8 @@ beforeEach(() => {
   Constants.expoConfig!.extra!.appEnv = 'development';
   nativeLookup.mockReset().mockReturnValue(null);
   check.mockReset().mockResolvedValue(true);
+  authTest.developerSignIn.mockReset().mockResolvedValue('ok');
+  authTest.setStatus('signedOut');
   warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 
@@ -154,6 +167,68 @@ it('a production bundle hides diagnostics regardless of the manifest environment
   await waitFor(() => expect(screen.getByTestId('apple-unavailable')).toBeTruthy());
   expect(screen.queryByTestId('apple-runtime-diagnostics')).toBeNull();
   expect(nativeLookup).not.toHaveBeenCalled();
+});
+
+it('Apple availability hides the developer sign-in button', async () => {
+  check.mockResolvedValue(true);
+  render(<SignInScreen />);
+  await waitFor(() => expect(screen.getByTestId('apple-sign-in')).toBeTruthy());
+  expect(screen.queryByTestId('dev-signin-button')).toBeNull();
+});
+
+it('a production bundle hides developer sign-in regardless of a development manifest', async () => {
+  Object.defineProperty(globalThis, '__DEV__', { value: false, configurable: true, writable: true });
+  check.mockResolvedValue(false);
+  render(<SignInScreen />);
+  await waitFor(() => expect(screen.getByTestId('apple-unavailable')).toBeTruthy());
+  expect(screen.queryByTestId('dev-signin-button')).toBeNull();
+});
+
+it('the development sheet offers a secure code field and submits the selected owner through AuthContext', async () => {
+  check.mockResolvedValue(false);
+  render(<SignInScreen />);
+  await waitFor(() => expect(screen.getByTestId('dev-signin-button')).toBeTruthy());
+  fireEvent.press(screen.getByTestId('dev-signin-button'));
+  const codeField = await screen.findByTestId('dev-signin-code');
+  expect(codeField.props.secureTextEntry).toBe(true);
+  expect(codeField.props.accessibilityLabel).toBe('Developer sign-in code');
+  fireEvent.changeText(codeField, 'temporary-private-code');
+  fireEvent.press(screen.getByTestId('dev-signin-owner-b'));
+  fireEvent.press(screen.getByTestId('dev-signin-submit'));
+  await waitFor(() => expect(authTest.developerSignIn).toHaveBeenCalledWith('temporary-private-code', 'owner-b'));
+  expect(screen.queryByTestId('dev-signin-code')).toBeNull();
+});
+
+it('production manifest hides developer sign-in even in a development bundle', async () => {
+  Constants.expoConfig!.extra!.appEnv = 'production';
+  check.mockResolvedValue(false);
+  render(<SignInScreen />);
+  await waitFor(() => expect(screen.getByTestId('apple-unavailable')).toBeTruthy());
+  expect(screen.queryByTestId('dev-signin-button')).toBeNull();
+});
+
+it('does not offer developer sign-in while the saved session is restoring', async () => {
+  authTest.setStatus('restoring');
+  check.mockResolvedValue(false);
+  render(<SignInScreen />);
+  await waitFor(() => expect(screen.getByText('Restoring your session…')).toBeTruthy());
+  expect(screen.queryByTestId('dev-signin-button')).toBeNull();
+});
+
+it('a rejected developer sign-in shows a safe error and clears the transient code from the sheet', async () => {
+  check.mockResolvedValue(false);
+  authTest.developerSignIn.mockResolvedValue('failed');
+  render(<SignInScreen />);
+  await waitFor(() => expect(screen.getByTestId('dev-signin-button')).toBeTruthy());
+  fireEvent.press(screen.getByTestId('dev-signin-button'));
+  const codeField = await screen.findByTestId('dev-signin-code');
+  fireEvent.changeText(codeField, 'do-not-retain-this-code');
+  fireEvent.press(screen.getByTestId('dev-signin-owner-a'));
+  fireEvent.press(screen.getByTestId('dev-signin-submit'));
+  await waitFor(() => expect(screen.getByTestId('dev-signin-error')).toBeTruthy());
+  expect(screen.getByTestId('dev-signin-error').props.children).not.toContain('do-not-retain-this-code');
+  expect(screen.getByTestId('dev-signin-code').props.value).toBe('');
+  expect(warning.mock.calls.flat().join(' ')).not.toContain('do-not-retain-this-code');
 });
 
 it('a diagnostic lookup failure is explicit and does not render or log native error details', async () => {

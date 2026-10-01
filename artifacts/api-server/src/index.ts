@@ -2,7 +2,9 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { migrate, safeMigrationError } from "./db/migrate";
 import { AuthConfigError, getDefaultAuthConfig } from "./auth/config";
-import { runApiStartup } from "./server/startup";
+import { runApiStartup, warnIfProductionDevSigninCodeIsSet } from "./server/startup";
+
+warnIfProductionDevSigninCodeIsSet(process.env, logger);
 
 const rawPort = process.env["PORT"];
 
