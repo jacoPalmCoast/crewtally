@@ -23,6 +23,7 @@ timeoutMs = 20000
 
 [userenv.development]
 APP_ENV = "development"
+PUBLIC_BASE_URL = "https://d545b864-b445-49e9-8fb5-949b581421df-00-nan59254efun.janeway.replit.dev/api"
 
 [nix]
 channel = "stable-25_05"

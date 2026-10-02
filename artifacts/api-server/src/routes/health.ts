@@ -2,13 +2,14 @@ import { Router, type IRouter } from "express";
 import type { Pool } from "pg";
 import { pool } from "../db/pool";
 import { logger } from "../lib/logger";
+import { publicRoute } from "./registration";
 
 export function createHealthRouter(
   db: Pool = pool,
   log: typeof logger = logger,
 ): IRouter {
   const router: IRouter = Router();
-  router.get("/health", async (_req, res, next) => {
+  publicRoute(router, "get", "/health", async (_req, res, next) => {
     let phase = "database";
     try {
       await db.query("select 1");

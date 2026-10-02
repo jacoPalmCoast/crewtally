@@ -166,7 +166,7 @@ async function signIn(app: Express, rawNonce: string, identityToken?: string) {
     });
 }
 
-function devSignIn(app: Express, label: "owner-a" | "owner-b", code = devSigninFixtureCode, alias = false) {
+function devSignIn(app: Express, label: "owner-a" | "owner-b" | "member-c" | "member-d", code = devSigninFixtureCode, alias = false) {
   return request(app)
     .post(`${alias ? "/api" : ""}/v1/auth/dev`)
     .send({ code, label });
@@ -368,14 +368,14 @@ describe("Phase 1 sign-in and session routes", () => {
       expect(response.headers["cache-control"]).toBe("no-store");
       expect(response.body).toMatchObject({
         sessionToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
-        workspace: { name: "My workspace", currency: "USD", locale: "en-US" },
         user: { id: expect.any(String) },
       });
     }
     expect(ownerA.body.user.id).toBe(ownerARepeat.body.user.id);
-    expect(ownerA.body.workspace.id).toBe(ownerARepeat.body.workspace.id);
+    expect(ownerA.body).not.toHaveProperty("workspace");
+    expect(ownerARepeat.body).not.toHaveProperty("workspace");
     expect(ownerA.body.user.id).not.toBe(ownerB.body.user.id);
-    expect(ownerA.body.workspace.id).not.toBe(ownerB.body.workspace.id);
+    expect(ownerB.body).not.toHaveProperty("workspace");
 
     const users = await isolated.query<{ id: string; apple_sub: string }>(
       "SELECT id, apple_sub FROM users WHERE apple_sub = ANY($1::text[]) ORDER BY apple_sub",
@@ -390,7 +390,7 @@ describe("Phase 1 sign-in and session routes", () => {
       "SELECT id FROM workspaces WHERE owner_id = ANY($1::uuid[])",
       [[ownerA.body.user.id, ownerB.body.user.id]],
     );
-    expect(workspaceCount.rowCount).toBe(2);
+    expect(workspaceCount.rowCount).toBe(0);
     const credentials = await isolated.query(
       "SELECT user_id FROM apple_credentials WHERE user_id = ANY($1::uuid[])",
       [[ownerA.body.user.id, ownerB.body.user.id]],
@@ -412,19 +412,19 @@ describe("Phase 1 sign-in and session routes", () => {
 
     const ownerABearer = `Bearer ${ownerA.body.sessionToken}`;
     const ownerBBearer = `Bearer ${ownerB.body.sessionToken}`;
-    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerABearer)).body.workspace.id)
-      .toBe(ownerA.body.workspace.id);
-    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerBBearer)).body.workspace.id)
-      .toBe(ownerB.body.workspace.id);
+    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerABearer)).body.workspaces).toEqual([]);
+    expect((await request(testApp.app).get("/v1/me").set("Authorization", ownerBBearer)).body.workspaces).toEqual([]);
+    const workspaceA = (await isolated.query("select create_workspace($1,'HOME','A','USD',null) as id", [ownerA.body.user.id])).rows[0].id;
+    const workspaceB = (await isolated.query("select create_workspace($1,'HOME','B','USD',null) as id", [ownerB.body.user.id])).rows[0].id;
     const foreignResource = await isolated.query<{ id: string }>(
       "INSERT INTO test_auth_resources (workspace_id) VALUES ($1) RETURNING id",
-      [ownerB.body.workspace.id],
+      [workspaceB],
     );
     const foreignId = foreignResource.rows[0]!.id;
     expect((await request(testApp.app).get(`/v1/test/resources/${foreignId}`)
-      .set("Authorization", ownerABearer)).status).toBe(404);
+      .set("Authorization", ownerABearer).set("X-Workspace-Id", workspaceA)).status).toBe(404);
     expect((await request(testApp.app).get(`/v1/test/resources/${foreignId}`)
-      .set("Authorization", ownerBBearer)).status).toBe(200);
+      .set("Authorization", ownerBBearer).set("X-Workspace-Id", workspaceB)).status).toBe(200);
 
     const ownerASessionHash = hashSessionToken(ownerA.body.sessionToken as string);
     await isolated.query(
@@ -489,13 +489,23 @@ describe("Phase 1 sign-in and session routes", () => {
     expect(usersAfter.rows[0]!.count).toBe(usersBefore.rows[0]!.count);
   });
 
+  it.each(["member-c", "member-d"] as const)("accepts %s as a workspace-free developer account", async label => {
+    const { app } = makeTestApp();
+    const response = await devSignIn(app, label);
+    expect(response.status).toBe(200);
+    expect(response.body).not.toHaveProperty("workspace");
+    const me = await request(app).get("/v1/me").set("Authorization", `Bearer ${response.body.sessionToken}`);
+    expect(me.status).toBe(200);
+    expect(me.body.user.has_apple).toBe(false);
+    expect(me.body.workspaces).toEqual([]);
+  });
+
   it("strictly validates the development sign-in body and applies the shared 10-per-minute limit", async () => {
     const app = makeTestApp().app;
     const invalidBodies = [
       {},
       { code: "", label: "owner-a" },
       { code: "x".repeat(4097), label: "owner-a" },
-      { code: devSigninFixtureCode, label: "owner-c" },
       { code: devSigninFixtureCode, label: "owner-a", extra: "rejected" },
     ];
     for (const body of invalidBodies) {
@@ -503,6 +513,9 @@ describe("Phase 1 sign-in and session routes", () => {
       expect(response.status).toBe(422);
       expect(response.body.error.code).toBe("INVALID_INPUT");
     }
+    const badLabel = await request(makeTestApp().app).post("/v1/auth/dev").send({ code: devSigninFixtureCode, label: "owner-c" });
+    expect(badLabel.status).toBe(400);
+    expect(badLabel.body.error.code).toBe("INVALID");
 
     const limitedApp = makeTestApp().app;
     const responses = await Promise.all(
@@ -522,7 +535,6 @@ describe("Phase 1 sign-in and session routes", () => {
     expect(response.headers["cache-control"]).toBe("no-store");
     expect(response.body).toMatchObject({
       sessionToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
-      workspace: { name: "My workspace", currency: "USD", locale: "en-US" },
       user: { id: expect.any(String) },
     });
     const userRows = await isolated.query<{ id: string }>(
@@ -538,11 +550,12 @@ describe("Phase 1 sign-in and session routes", () => {
       [response.body.user.id],
     );
     expect(userRows.rowCount).toBe(1);
-    expect(workspaceRows.rowCount).toBe(1);
+    expect(workspaceRows.rowCount).toBe(0);
+    expect(response.body).not.toHaveProperty("workspace");
     expect(sessionRows.rowCount).toBe(1);
   });
 
-  it("reuses the same user and workspace on concurrent repeat sign-ins", async () => {
+  it("reuses the same user and creates no workspace on concurrent repeat sign-ins", async () => {
     const testApp = makeTestApp();
     const rawNonce = nonce();
     const sub = `repeat-sub-${randomUUID()}`;
@@ -554,11 +567,12 @@ describe("Phase 1 sign-in and session routes", () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(first.body.user.id).toBe(second.body.user.id);
-    expect(first.body.workspace.id).toBe(second.body.workspace.id);
+    expect(first.body).not.toHaveProperty("workspace");
+    expect(second.body).not.toHaveProperty("workspace");
     const users = await isolated.query("SELECT id FROM users WHERE apple_sub = $1", [sub]);
     const workspaces = await isolated.query("SELECT id FROM workspaces WHERE owner_id = $1", [first.body.user.id]);
     expect(users.rowCount).toBe(1);
-    expect(workspaces.rowCount).toBe(1);
+    expect(workspaces.rowCount).toBe(0);
   });
 
   it("caches the Apple JWKS response while verifying separate sign-ins", async () => {
@@ -688,8 +702,8 @@ describe("Phase 1 sign-in and session routes", () => {
     const firstMe = await first.agent.get("/v1/me");
     const secondMe = await second.agent.get("/v1/me");
     expect(firstMe.headers["cache-control"]).toBe("no-store");
-    expect(firstMe.body.workspace.id).toBe(first.workspaceId);
-    expect(secondMe.body.workspace.id).toBe(second.workspaceId);
+    expect(firstMe.body.workspaces.map((w: { id: string }) => w.id)).toEqual([first.workspaceId]);
+    expect(secondMe.body.workspaces.map((w: { id: string }) => w.id)).toEqual([second.workspaceId]);
 
     const resource = await isolated.query<{ id: string }>(
       "INSERT INTO test_auth_resources (workspace_id) VALUES ($1) RETURNING id",
@@ -766,7 +780,7 @@ describe("Phase 1 sign-in and session routes", () => {
     const proxy = await request(app).get("/api/v1/health");
     expect(direct.status).toBe(200);
     expect(proxy.status).toBe(200);
-    expect(direct.body).toEqual({ status: "ok", db: "ok", migrations: 2 });
+    expect(direct.body).toEqual({ status: "ok", db: "ok", migrations: 3 });
     expect(proxy.body).toEqual(direct.body);
   });
 

@@ -2,6 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { removeMember } from '@/lib/mobileApi';
+import { useOperationKeeper } from '@/lib/operation';
+import { kindLabel, roleLabel } from '@/lib/roles';
+import { SecondaryButton } from '@/components/SecondaryButton';
 import { Feather } from '@expo/vector-icons';
 import { ApiError, getAppVersion, getHealth, type ApiResponse, type HealthResponse } from '@/lib/api';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -11,7 +16,31 @@ import { useColors } from '@/hooks/useColors';
 export default function MoreScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { workspace } = useAuth();
+  const { userId } = useAuth();
+  const { workspace, workspaceId, role, kind, can, afterLeaving } = useWorkspace();
+  const leaveOp = useOperationKeeper();
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const isHome = kind === 'HOME';
+  const showPartner = isHome && can['members.manage'] === true;
+  const showLeave = isHome && !!role && role !== 'ORGANIZER' && !!userId;
+
+  const leave = async () => {
+    if (!userId || leaving) return;
+    setLeaving(true);
+    setLeaveError(null);
+    try {
+      await removeMember(userId, leaveOp.idFor(`leave|${workspaceId}`));
+      leaveOp.done();
+      await afterLeaving();
+      router.replace('/switcher' as never);
+    } catch {
+      setLeaveError('Could not leave. Check your connection and try again.');
+    } finally {
+      setLeaving(false);
+    }
+  };
   const [health, setHealth] = useState<ApiResponse<HealthResponse> | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,25 +69,37 @@ export default function MoreScreen() {
   }, [loadHealth]);
 
   return (
-    <Screen title="More">
+    <Screen title="More" workspaceHeader>
       <View style={[styles.card, styles.accountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Pressable
-          accessibilityRole="button"
-          testID="more-account"
-          onPress={() => router.push('/account' as never)}
-          style={styles.row}
-        >
-          <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>Account</Text>
-          <Feather accessible={false} name="chevron-right" size={20} color={colors.mutedForeground} />
-        </Pressable>
+        <NavRow label="Workspaces" testID="more-workspaces" onPress={() => router.push('/switcher' as never)} />
+        {showPartner ? (<><View style={[styles.divider, { backgroundColor: colors.border }]} /><NavRow label="Partner" testID="more-partner" onPress={() => router.push('/partner' as never)} /></>) : null}
+        {showLeave ? (<><View style={[styles.divider, { backgroundColor: colors.border }]} /><NavRow label={`Leave ${workspace?.name ?? 'workspace'}`} testID="more-leave" onPress={() => setConfirmLeave(true)} /></>) : null}
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <NavRow label="Account" testID="more-account" onPress={() => router.push('/account' as never)} />
       </View>
+      {confirmLeave ? (
+        <View style={[styles.card, styles.accountCard, { backgroundColor: colors.card, borderColor: colors.border, padding: 16, gap: 12 }]}>
+          <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>
+            You will lose access to {workspace?.name}. Work and payments you recorded stay in the records.
+          </Text>
+          <PrimaryButton label={leaving ? 'Leaving…' : `Leave ${workspace?.name ?? 'workspace'}`} testID="leave-confirm" disabled={leaving} onPress={() => void leave()} />
+          <SecondaryButton label="Cancel" onPress={() => setConfirmLeave(false)} />
+          {leaveError ? <Text accessibilityLiveRegion="polite" allowFontScaling style={[styles.errorText, { color: colors.destructive }]}>{leaveError}</Text> : null}
+        </View>
+      ) : null}
       <Text accessibilityRole="header" allowFontScaling style={[styles.sectionTitle, { color: colors.foreground }]}>
         Diagnostics
       </Text>
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <DiagnosticRow label="App version" value={getAppVersion()} />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <DiagnosticRow label="Workspace" value={workspace ? workspace.id.slice(0, 8) : 'Unknown'} />
+        <DiagnosticRow label="User" value={userId ? userId.slice(0, 8) : 'Unknown'} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <DiagnosticRow label="Workspace" value={workspace ? workspace.id : 'Unknown'} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <DiagnosticRow label="Role" value={role ? roleLabel(role).toUpperCase() : 'Unknown'} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        <DiagnosticRow label="Kind" value={kind ? kindLabel(kind).toUpperCase() : 'Unknown'} />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.row}>
           <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>API status</Text>
@@ -117,6 +158,16 @@ export default function MoreScreen() {
         />
       ) : null}
     </Screen>
+  );
+}
+
+function NavRow({ label, onPress, testID }: { label: string; onPress: () => void; testID: string }) {
+  const colors = useColors();
+  return (
+    <Pressable accessibilityRole="button" testID={testID} onPress={onPress} style={styles.row}>
+      <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>{label}</Text>
+      <Feather accessible={false} name="chevron-right" size={20} color={colors.mutedForeground} />
+    </Pressable>
   );
 }
 

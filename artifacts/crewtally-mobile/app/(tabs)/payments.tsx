@@ -4,7 +4,7 @@ import { Screen } from '@/components/Screen';
 
 export default function PaymentsScreen() {
   return (
-    <Screen title="Payments">
+    <Screen title="Payments" workspaceHeader>
       <EmptyState
         icon="credit-card"
         title="No payments yet"

@@ -9,6 +9,9 @@ import { requireSession } from "../middlewares/session";
 import { createAuthRouter } from "./auth";
 import { createHealthRouter } from "./health";
 import { createMeRouter } from "./me";
+import { createWorkspaceRouter } from "./workspaces";
+import { createMembersRouter } from "./members";
+import { createInvitationRouter } from "./invitations";
 
 export interface RouterLogger {
   info: (fields: Record<string, unknown>, message?: string) => void;
@@ -47,16 +50,11 @@ export function createRouter(options: RouterOptions = {}): IRouter {
     logger: options.logger ?? logger,
   }));
 
-  const protect = requireSession(db);
-  router.use((req, res, next) => {
-    if (req.path === "/health" || req.path.startsWith("/auth/")) {
-      next();
-      return;
-    }
-    protect(req, res, next);
-  });
   router.use(createMeRouter(db));
-  if (options.testOnlyProtectedRouter) router.use(options.testOnlyProtectedRouter);
+  router.use(createWorkspaceRouter(db, env));
+  router.use(createMembersRouter(db));
+  router.use(createInvitationRouter(db, env));
+  if (options.testOnlyProtectedRouter) router.use(requireSession(db), options.testOnlyProtectedRouter);
   return router;
 }
 

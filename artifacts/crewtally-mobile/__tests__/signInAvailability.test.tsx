@@ -169,11 +169,11 @@ it('a production bundle hides diagnostics regardless of the manifest environment
   expect(nativeLookup).not.toHaveBeenCalled();
 });
 
-it('Apple availability hides the developer sign-in button', async () => {
+it('developer sign-in is offered in development builds even when Apple is available', async () => {
   check.mockResolvedValue(true);
   render(<SignInScreen />);
   await waitFor(() => expect(screen.getByTestId('apple-sign-in')).toBeTruthy());
-  expect(screen.queryByTestId('dev-signin-button')).toBeNull();
+  expect(screen.getByTestId('dev-signin-button')).toBeTruthy();
 });
 
 it('a production bundle hides developer sign-in regardless of a development manifest', async () => {

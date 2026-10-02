@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useColors } from '@/hooks/useColors';
@@ -98,7 +99,7 @@ const DevSignInSheet = __DEV__
           edges={['top', 'bottom', 'left', 'right']}
           style={[styles.safe, { backgroundColor: colors.background }]}
         >
-          <View style={styles.content}>
+          <KeyboardAwareScrollViewCompat contentContainerStyle={styles.content}>
             <View style={styles.headingRow}>
               <Text accessibilityRole="header" allowFontScaling style={[styles.heading, { color: colors.foreground }]}>
                 Developer sign-in
@@ -129,6 +130,8 @@ const DevSignInSheet = __DEV__
             <View accessibilityRole="radiogroup" accessibilityLabel="Choose test owner" style={styles.choices}>
               {choice('owner-a', 'Owner A')}
               {choice('owner-b', 'Owner B')}
+              {choice('member-c', 'Member C')}
+              {choice('member-d', 'Member D')}
             </View>
             {error ? (
               <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.destructive }]} testID="dev-signin-error">
@@ -144,7 +147,7 @@ const DevSignInSheet = __DEV__
             <Text allowFontScaling style={[styles.note, { color: colors.mutedForeground }]}>
               Test-only access for development builds.
             </Text>
-          </View>
+          </KeyboardAwareScrollViewCompat>
         </SafeAreaView>
       </Modal>
     </>
@@ -156,12 +159,12 @@ export default DevSignInSheet;
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { flex: 1, padding: 24, gap: 18 },
+  content: { flexGrow: 1, padding: 24, gap: 18 },
   headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { fontSize: 24, fontWeight: '700' },
   close: { fontSize: 16, textDecorationLine: 'underline' },
   input: { minHeight: 52, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontSize: 16 },
-  choices: { flexDirection: 'row', gap: 12 },
+  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   choice: { flex: 1, minHeight: 48, borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   choiceText: { fontSize: 16, fontWeight: '600' },
   error: { fontSize: 14, lineHeight: 20 },

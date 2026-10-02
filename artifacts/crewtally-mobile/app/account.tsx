@@ -1,13 +1,41 @@
 import React, { useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
+import { Field } from '@/components/Field';
+import { PrimaryButton } from '@/components/PrimaryButton';
+import { patchMe } from '@/lib/mobileApi';
+import { useOperationKeeper } from '@/lib/operation';
 import { useColors } from '@/hooks/useColors';
 import { PRIVACY_URL, SUPPORT_URL } from '@/lib/links';
 
 export default function AccountScreen() {
   const colors = useColors();
-  const { signOut, message } = useAuth();
+  const { signOut, message, profile, refreshMe } = useAuth();
+  const nameOp = useOperationKeeper();
+  const [name, setName] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const shownName = name ?? profile?.display_name ?? '';
+
+  const saveName = async () => {
+    const value = shownName.trim();
+    if (saving || value.length > 60) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await patchMe(value, nameOp.idFor(value));
+      nameOp.done();
+      await refreshMe().catch(() => null);
+      setName(null);
+      setSaveMsg({ ok: true, text: 'Name saved.' });
+    } catch {
+      setSaveMsg({ ok: false, text: 'Could not save your name. Check your connection and try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
   const [confirming, setConfirming] = useState(false);
   const [working, setWorking] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -29,15 +57,26 @@ export default function AccountScreen() {
   );
 
   return (
-    <ScrollView
+    <KeyboardAwareScrollViewCompat
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={[styles.content, Platform.OS === 'web' && { paddingBottom: 34 }]}
     >
+      <View style={[styles.card, card, { padding: 16, gap: 12 }]}>
+        <Field label="Your name" hint="Shown to people in your workspaces. Never on receipts." value={shownName}
+          onChangeText={setName} maxLength={60} autoCapitalize="words" testID="account-name" />
+        <PrimaryButton label={saving ? 'Saving…' : 'Save name'} testID="account-name-save" disabled={saving || shownName.trim() === (profile?.display_name ?? '')}
+          onPress={() => void saveName()} />
+        {saveMsg ? (
+          <Text accessibilityLiveRegion="polite" allowFontScaling testID="account-name-msg"
+            style={{ color: saveMsg.ok ? colors.foreground : colors.destructive, fontSize: 15 }}>{saveMsg.text}</Text>
+        ) : null}
+      </View>
+
       <View style={[styles.card, card]}>
         <View style={styles.row}>
           <Text allowFontScaling style={[styles.label, { color: colors.foreground }]}>Sign-in</Text>
           <Text allowFontScaling testID="account-signin" style={[styles.value, { color: colors.mutedForeground }]}>
-            Signed in with Apple
+            {profile && !profile.has_apple ? 'Developer sign-in' : 'Signed in with Apple'}
           </Text>
         </View>
       </View>
@@ -76,7 +115,7 @@ export default function AccountScreen() {
           {message ?? 'Could not sign out. You are still signed in. Try again.'}
         </Text>
       ) : null}
-    </ScrollView>
+    </KeyboardAwareScrollViewCompat>
   );
 }
 

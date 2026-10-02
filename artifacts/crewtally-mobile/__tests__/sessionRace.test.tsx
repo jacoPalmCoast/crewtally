@@ -20,6 +20,7 @@ jest.mock('expo-crypto', () => ({
   CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
   CryptoEncoding: { HEX: 'hex' },
 }));
+jest.mock('@/lib/mobileApi', () => ({ ...jest.requireActual('@/lib/mobileApi'), getMe: jest.fn() }));
 jest.mock('@workspace/api-client-react', () => ({
   getMe: jest.fn(), signInWithApple: jest.fn(), signOut: jest.fn(),
   setBaseUrl: jest.fn(), setAuthTokenGetter: jest.fn(), setUnauthorizedHandler: jest.fn(),
@@ -28,15 +29,16 @@ jest.mock('@workspace/api-client-react', () => ({
 import * as Apple from 'expo-apple-authentication';
 import * as SecureStore from 'expo-secure-store';
 import * as Api from '@workspace/api-client-react';
+import * as Mobile from '@/lib/mobileApi';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { clearToken, loadToken, peekToken, saveToken } from '@/lib/sessionStore';
 import { reportUnauthorized } from '@/lib/authEvents';
 
-const api = Api as unknown as Record<'getMe' | 'signInWithApple', jest.Mock>;
+const api = { signInWithApple: (Api as unknown as Record<'signInWithApple', jest.Mock>).signInWithApple, getMe: Mobile.getMe as unknown as jest.Mock };
 const apple = Apple as unknown as { signInAsync: jest.Mock };
 const OLD = 'O'.repeat(43);
 const NEW = 'N'.repeat(43);
-const WS = { id: 'abcdef12-0000-4000-8000-000000000000', name: 'My workspace', currency: 'USD', locale: 'en-US' };
+const ME = { user: { id: 'u1', display_name: null, has_apple: true, email: null }, workspaces: [] };
 
 function gate() {
   let release!: () => void;
@@ -108,9 +110,9 @@ describe('sign-in vs expiry cleanup', () => {
   it('signIn cannot complete until the expiry delete finishes, and the old delete never wipes the new token', async () => {
     qcRef.current = new QueryClient();
     mockStore[KEY] = OLD;
-    api.getMe.mockResolvedValue({ workspace: WS, user: { id: 'u1' } });
+    api.getMe.mockResolvedValue(ME);
     apple.signInAsync.mockResolvedValue({ identityToken: 'id', authorizationCode: 'code' });
-    api.signInWithApple.mockResolvedValue({ sessionToken: NEW, workspace: WS, user: { id: 'u1' } });
+    api.signInWithApple.mockResolvedValue({ sessionToken: NEW, user: { id: 'u1' } });
     const h = renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(h.result.current.status).toBe('signedIn'));
 

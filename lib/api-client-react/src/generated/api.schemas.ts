@@ -5,6 +5,216 @@
  * CrewTally API
  * OpenAPI spec version: 0.1.0
  */
+export interface PublicConfig {
+  business_enabled: boolean;
+}
+
+export interface OperationInput {
+  operation_id: string;
+}
+
+export type WorkspaceInputKind = typeof WorkspaceInputKind[keyof typeof WorkspaceInputKind];
+
+
+export const WorkspaceInputKind = {
+  HOME: 'HOME',
+  BUSINESS: 'BUSINESS',
+} as const;
+
+export interface WorkspaceInput {
+  operation_id: string;
+  kind: WorkspaceInputKind;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  timezone: string;
+}
+
+export interface WorkspaceNameInput {
+  operation_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+}
+
+export interface AccountNameInput {
+  operation_id: string;
+  /** @maxLength 60 */
+  display_name: string;
+}
+
+export interface NameResult {
+  /** @nullable */
+  display_name: string | null;
+}
+
+export interface OkResult {
+  ok: boolean;
+}
+
+export type WorkspaceAccessCan = {[key: string]: boolean};
+
+export type WorkspaceKind = typeof WorkspaceKind[keyof typeof WorkspaceKind];
+
+
+export const WorkspaceKind = {
+  HOME: 'HOME',
+  BUSINESS: 'BUSINESS',
+} as const;
+
+export interface Workspace {
+  id: string;
+  name: string;
+  currency: 'USD';
+  kind: WorkspaceKind;
+  /** @nullable */
+  default_timezone: string | null;
+}
+
+export type WorkspaceAccess = Workspace & ({
+  role: string;
+  /** @nullable */
+  financial_access: boolean | null;
+  /** @nullable */
+  worker_id: string | null;
+  can: WorkspaceAccessCan;
+});
+
+export type MemberRoleInputRole = typeof MemberRoleInputRole[keyof typeof MemberRoleInputRole];
+
+
+export const MemberRoleInputRole = {
+  ORGANIZER: 'ORGANIZER',
+  PARTNER: 'PARTNER',
+  OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  LEAD: 'LEAD',
+  WORKER: 'WORKER',
+} as const;
+
+export interface MemberRoleInput {
+  operation_id: string;
+  role: MemberRoleInputRole;
+  /** @nullable */
+  financial_access?: boolean | null;
+}
+
+export interface Member {
+  user_id: string;
+  /** @nullable */
+  display_name: string | null;
+  name: string;
+  role: string;
+  /** @nullable */
+  financial_access: boolean | null;
+  joined_at: string;
+  /** @nullable */
+  email?: string | null;
+}
+
+export interface MemberList {
+  members: Member[];
+}
+
+export type InvitationInputRole = typeof InvitationInputRole[keyof typeof InvitationInputRole];
+
+
+export const InvitationInputRole = {
+  PARTNER: 'PARTNER',
+  ADMIN: 'ADMIN',
+  LEAD: 'LEAD',
+  WORKER: 'WORKER',
+} as const;
+
+export interface InvitationInput {
+  operation_id: string;
+  role: InvitationInputRole;
+  /** @maxLength 254 */
+  email: string;
+  /** @maxLength 60 */
+  name?: string;
+  /** @nullable */
+  financial_access?: boolean | null;
+  /** @nullable */
+  worker_id?: string | null;
+}
+
+export type InvitationStatus = typeof InvitationStatus[keyof typeof InvitationStatus];
+
+
+export const InvitationStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REVOKED: 'REVOKED',
+  DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export interface Invitation {
+  id: string;
+  /** @nullable */
+  invitee_name: string | null;
+  email: string;
+  role: string;
+  status: InvitationStatus;
+  expires_at: string;
+}
+
+export interface InvitationList {
+  invitations: Invitation[];
+}
+
+export interface InvitationCreated {
+  id: string;
+  expires_at: string;
+  /** @nullable */
+  token: string | null;
+  /** @nullable */
+  code: string | null;
+  /** @nullable */
+  link: string | null;
+  already_created: boolean;
+}
+
+export interface InvitationTokenInput {
+  /** @pattern ^[A-Za-z0-9_-]{43}$ */
+  token: string;
+}
+
+export interface InvitationAcceptInput {
+  /** @pattern ^[A-Za-z0-9_-]{43}$ */
+  token: string;
+  operation_id: string;
+}
+
+export interface InvitationCodeInput {
+  /** @maxLength 254 */
+  email: string;
+  /** @pattern ^[0-9]{6}$ */
+  code: string;
+  operation_id: string;
+}
+
+export interface InvitationPreview {
+  available: boolean;
+  workspace_name?: string;
+  role?: string;
+}
+
+export interface InvitationAccepted {
+  workspace_id: string;
+  role: string;
+  already_member: boolean;
+}
+
 export interface HealthStatus {
   status: 'ok';
   db: 'ok';
@@ -37,6 +247,8 @@ export type DevSignInInputLabel = typeof DevSignInInputLabel[keyof typeof DevSig
 export const DevSignInInputLabel = {
   'owner-a': 'owner-a',
   'owner-b': 'owner-b',
+  'member-c': 'member-c',
+  'member-d': 'member-d',
 } as const;
 
 export interface DevSignInInput {
@@ -46,13 +258,6 @@ export interface DevSignInInput {
      */
   code: string;
   label: DevSignInInputLabel;
-}
-
-export interface Workspace {
-  id: string;
-  name: 'My workspace';
-  currency: 'USD';
-  locale: 'en-US';
 }
 
 export interface User {
@@ -65,13 +270,38 @@ export interface AppleSignInResponse {
      * @maxLength 43
      */
   sessionToken: string;
-  workspace: Workspace;
   user: User;
 }
 
+export type WorkspaceSummaryKind = typeof WorkspaceSummaryKind[keyof typeof WorkspaceSummaryKind];
+
+
+export const WorkspaceSummaryKind = {
+  HOME: 'HOME',
+  BUSINESS: 'BUSINESS',
+} as const;
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  kind: WorkspaceSummaryKind;
+  role: string;
+  /** @nullable */
+  financial_access: boolean | null;
+}
+
+export interface AccountUser {
+  id: string;
+  /** @nullable */
+  display_name: string | null;
+  /** @nullable */
+  email: string | null;
+  has_apple: boolean;
+}
+
 export interface MeResponse {
-  workspace: Workspace;
-  user: User;
+  workspaces: WorkspaceSummary[];
+  user: AccountUser;
 }
 
 export type ErrorResponseError = {
@@ -108,4 +338,6 @@ export type RateLimitedResponse = ErrorResponse;
  * Safe server error
  */
 export type ServerErrorResponse = ErrorResponse;
+
+export type WorkspaceHeaderParameter = string;
 

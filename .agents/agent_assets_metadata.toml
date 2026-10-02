@@ -14,3 +14,17 @@ mtime_ms = 1790880616531
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:d545b864-b445-49e9-8fb5-949b581421df/e24fc7a1-68ba-4528-964c-d79eb845d966/cc67e787-5556-49ab-8d7e-d13b4de52723"
 storage_version_token = "1790880617152303"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "E8Mc8eDIy4s6f9lA7eHEd"
+uri = "file://docs/PHASE_1B_GATE_PROOF.md"
+type = "text"
+title = "Phase 1b gate — code and evidence"
+description = "Actual requested source code, route table and matrix, test outputs, startup evidence, all changed files, and explicit verification gaps and spec review points."
+logical_id = "1e1b8a3c-bf7d-4124-9edd-d927784ae799"
+content_hash = "sha256:b0c1a95610744003cc38cfc2c3973989a66bb560e7fa755d019a20c70fdde6eb"
+size = 33146
+mtime_ms = 1790973983536
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:d545b864-b445-49e9-8fb5-949b581421df/1e1b8a3c-bf7d-4124-9edd-d927784ae799/b088de49-f1c8-40a7-8e2a-fac1682e0eb8"
+storage_version_token = "1790973984031575"
+content_type = "text/markdown"

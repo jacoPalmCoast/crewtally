@@ -20,16 +20,36 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountNameInput,
   AppleSignInRequest,
   AppleSignInResponse,
   BadRequestResponse,
   DevSignInInput,
+  ErrorResponse,
   HealthStatus,
+  InvitationAcceptInput,
+  InvitationAccepted,
+  InvitationCodeInput,
+  InvitationCreated,
+  InvitationInput,
+  InvitationList,
+  InvitationPreview,
+  InvitationTokenInput,
   MeResponse,
+  MemberList,
+  MemberRoleInput,
+  NameResult,
   NotFoundResponse,
+  OkResult,
+  OperationInput,
+  PublicConfig,
   RateLimitedResponse,
   ServerErrorResponse,
-  UnauthorizedResponse
+  UnauthorizedResponse,
+  Workspace,
+  WorkspaceAccess,
+  WorkspaceInput,
+  WorkspaceNameInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -399,7 +419,7 @@ export const getGetMeUrl = () => {
 }
 
 /**
- * @summary Get the authenticated owner and workspace
+ * @summary Get the authenticated account and its active workspaces
  */
 export const getMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<MeResponse> => {
 
@@ -446,7 +466,7 @@ export type GetMeQueryError = ErrorType<UnauthorizedResponse | ServerErrorRespon
 
 
 /**
- * @summary Get the authenticated owner and workspace
+ * @summary Get the authenticated account and its active workspaces
  */
 
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<UnauthorizedResponse | ServerErrorResponse>>(
@@ -466,4 +486,1193 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
 
 
 
+
+export const getUpdateAccountNameUrl = () => {
+
+
+
+
+  return `/api/v1/me`
+}
+
+export const updateAccountName = async (accountNameInput: AccountNameInput, options?: Parameters<typeof customFetch>[1]): Promise<NameResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<NameResult>(getUpdateAccountNameUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(accountNameInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateAccountNameMutationKey = () => ['updateAccountName'] as const;
+
+export const getUpdateAccountNameMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAccountName>>, TError,UpdateAccountNameMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAccountName>>, TError,UpdateAccountNameMutationVariables, TContext> => {
+
+const mutationKey = getUpdateAccountNameMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAccountName>>, UpdateAccountNameMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateAccountName(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAccountNameMutationResult = NonNullable<Awaited<ReturnType<typeof updateAccountName>>>
+    export type UpdateAccountNameMutationBody = BodyType<AccountNameInput>
+    export type UpdateAccountNameMutationError = ErrorType<unknown>
+    export type UpdateAccountNameMutationVariables = {data: BodyType<AccountNameInput>}
+
+    export const useUpdateAccountName = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAccountName>>, TError,UpdateAccountNameMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAccountName>>,
+        TError,
+        UpdateAccountNameMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateAccountNameMutationOptions(options));
+    }
+
+export const getGetConfigUrl = () => {
+
+
+
+
+  return `/api/v1/config`
+}
+
+export const getConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicConfig> => {
+
+  return customFetch<PublicConfig>(getGetConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetConfigQueryKey = () => {
+    return [
+    `/api/v1/config`
+    ] as const;
+    }
+
+
+export const getGetConfigQueryOptions = <TData = Awaited<ReturnType<typeof getConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfig>>> = ({ signal }) => getConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getConfig>>>
+export type GetConfigQueryError = ErrorType<unknown>
+
+
+
+export function useGetConfig<TData = Awaited<ReturnType<typeof getConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateWorkspaceUrl = () => {
+
+
+
+
+  return `/api/v1/workspaces`
+}
+
+export const createWorkspace = async (workspaceInput: WorkspaceInput, options?: Parameters<typeof customFetch>[1]): Promise<Workspace> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Workspace>(getCreateWorkspaceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workspaceInput)
+  }
+);}
+
+
+
+
+
+export const getCreateWorkspaceMutationKey = () => ['createWorkspace'] as const;
+
+export const getCreateWorkspaceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWorkspace>>, TError,CreateWorkspaceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createWorkspace>>, TError,CreateWorkspaceMutationVariables, TContext> => {
+
+const mutationKey = getCreateWorkspaceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWorkspace>>, CreateWorkspaceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createWorkspace(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWorkspaceMutationResult = NonNullable<Awaited<ReturnType<typeof createWorkspace>>>
+    export type CreateWorkspaceMutationBody = BodyType<WorkspaceInput>
+    export type CreateWorkspaceMutationError = ErrorType<unknown>
+    export type CreateWorkspaceMutationVariables = {data: BodyType<WorkspaceInput>}
+
+    export const useCreateWorkspace = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWorkspace>>, TError,CreateWorkspaceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createWorkspace>>,
+        TError,
+        CreateWorkspaceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateWorkspaceMutationOptions(options));
+    }
+
+export const getGetWorkspaceUrl = () => {
+
+
+
+
+  return `/api/v1/workspace`
+}
+
+export const getWorkspace = async ( options?: Parameters<typeof customFetch>[1]): Promise<WorkspaceAccess> => {
+
+  return customFetch<WorkspaceAccess>(getGetWorkspaceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkspaceQueryKey = () => {
+    return [
+    `/api/v1/workspace`
+    ] as const;
+    }
+
+
+export const getGetWorkspaceQueryOptions = <TData = Awaited<ReturnType<typeof getWorkspace>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkspace>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkspaceQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkspace>>> = ({ signal }) => getWorkspace({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkspace>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkspaceQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkspace>>>
+export type GetWorkspaceQueryError = ErrorType<unknown>
+
+
+
+export function useGetWorkspace<TData = Awaited<ReturnType<typeof getWorkspace>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkspace>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkspaceQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRenameWorkspaceUrl = () => {
+
+
+
+
+  return `/api/v1/workspace`
+}
+
+export const renameWorkspace = async (workspaceNameInput: WorkspaceNameInput, options?: Parameters<typeof customFetch>[1]): Promise<Workspace> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Workspace>(getRenameWorkspaceUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workspaceNameInput)
+  }
+);}
+
+
+
+
+
+export const getRenameWorkspaceMutationKey = () => ['renameWorkspace'] as const;
+
+export const getRenameWorkspaceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameWorkspace>>, TError,RenameWorkspaceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof renameWorkspace>>, TError,RenameWorkspaceMutationVariables, TContext> => {
+
+const mutationKey = getRenameWorkspaceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renameWorkspace>>, RenameWorkspaceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  renameWorkspace(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RenameWorkspaceMutationResult = NonNullable<Awaited<ReturnType<typeof renameWorkspace>>>
+    export type RenameWorkspaceMutationBody = BodyType<WorkspaceNameInput>
+    export type RenameWorkspaceMutationError = ErrorType<unknown>
+    export type RenameWorkspaceMutationVariables = {data: BodyType<WorkspaceNameInput>}
+
+    export const useRenameWorkspace = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameWorkspace>>, TError,RenameWorkspaceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof renameWorkspace>>,
+        TError,
+        RenameWorkspaceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRenameWorkspaceMutationOptions(options));
+    }
+
+export const getListMembersUrl = () => {
+
+
+
+
+  return `/api/v1/members`
+}
+
+export const listMembers = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberList> => {
+
+  return customFetch<MemberList>(getListMembersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMembersQueryKey = () => {
+    return [
+    `/api/v1/members`
+    ] as const;
+    }
+
+
+export const getListMembersQueryOptions = <TData = Awaited<ReturnType<typeof listMembers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMembersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMembers>>> = ({ signal }) => listMembers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMembersQueryResult = NonNullable<Awaited<ReturnType<typeof listMembers>>>
+export type ListMembersQueryError = ErrorType<unknown>
+
+
+
+export function useListMembers<TData = Awaited<ReturnType<typeof listMembers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMembersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRemoveMemberUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/members/${userId}`
+}
+
+export const removeMember = async (userId: string,
+    operationInput: OperationInput, options?: Parameters<typeof customFetch>[1]): Promise<OkResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OkResult>(getRemoveMemberUrl(userId),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(operationInput)
+  }
+);}
+
+
+
+
+
+export const getRemoveMemberMutationKey = () => ['removeMember'] as const;
+
+export const getRemoveMemberMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeMember>>, TError,RemoveMemberMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeMember>>, TError,RemoveMemberMutationVariables, TContext> => {
+
+const mutationKey = getRemoveMemberMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeMember>>, RemoveMemberMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  removeMember(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveMemberMutationResult = NonNullable<Awaited<ReturnType<typeof removeMember>>>
+    export type RemoveMemberMutationBody = BodyType<OperationInput>
+    export type RemoveMemberMutationError = ErrorType<unknown>
+    export type RemoveMemberMutationVariables = {userId: string;data: BodyType<OperationInput>}
+
+    export const useRemoveMember = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeMember>>, TError,RemoveMemberMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeMember>>,
+        TError,
+        RemoveMemberMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveMemberMutationOptions(options));
+    }
+
+export const getChangeMemberRoleUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/members/${userId}`
+}
+
+export const changeMemberRole = async (userId: string,
+    memberRoleInput: MemberRoleInput, options?: Parameters<typeof customFetch>[1]): Promise<OkResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OkResult>(getChangeMemberRoleUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(memberRoleInput)
+  }
+);}
+
+
+
+
+
+export const getChangeMemberRoleMutationKey = () => ['changeMemberRole'] as const;
+
+export const getChangeMemberRoleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeMemberRole>>, TError,ChangeMemberRoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeMemberRole>>, TError,ChangeMemberRoleMutationVariables, TContext> => {
+
+const mutationKey = getChangeMemberRoleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeMemberRole>>, ChangeMemberRoleMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  changeMemberRole(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeMemberRoleMutationResult = NonNullable<Awaited<ReturnType<typeof changeMemberRole>>>
+    export type ChangeMemberRoleMutationBody = BodyType<MemberRoleInput>
+    export type ChangeMemberRoleMutationError = ErrorType<unknown>
+    export type ChangeMemberRoleMutationVariables = {userId: string;data: BodyType<MemberRoleInput>}
+
+    export const useChangeMemberRole = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeMemberRole>>, TError,ChangeMemberRoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeMemberRole>>,
+        TError,
+        ChangeMemberRoleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeMemberRoleMutationOptions(options));
+    }
+
+export const getListInvitationsUrl = () => {
+
+
+
+
+  return `/api/v1/invitations`
+}
+
+export const listInvitations = async ( options?: Parameters<typeof customFetch>[1]): Promise<InvitationList> => {
+
+  return customFetch<InvitationList>(getListInvitationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListInvitationsQueryKey = () => {
+    return [
+    `/api/v1/invitations`
+    ] as const;
+    }
+
+
+export const getListInvitationsQueryOptions = <TData = Awaited<ReturnType<typeof listInvitations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInvitations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInvitationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInvitations>>> = ({ signal }) => listInvitations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInvitations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListInvitationsQueryResult = NonNullable<Awaited<ReturnType<typeof listInvitations>>>
+export type ListInvitationsQueryError = ErrorType<unknown>
+
+
+
+export function useListInvitations<TData = Awaited<ReturnType<typeof listInvitations>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInvitations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListInvitationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/invitations`
+}
+
+export const createInvitation = async (invitationInput: InvitationInput, options?: Parameters<typeof customFetch>[1]): Promise<InvitationCreated> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InvitationCreated>(getCreateInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(invitationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInvitationMutationKey = () => ['createInvitation'] as const;
+
+export const getCreateInvitationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvitation>>, TError,CreateInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvitation>>, TError,CreateInvitationMutationVariables, TContext> => {
+
+const mutationKey = getCreateInvitationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvitation>>, CreateInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInvitation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof createInvitation>>>
+    export type CreateInvitationMutationBody = BodyType<InvitationInput>
+    export type CreateInvitationMutationError = ErrorType<unknown>
+    export type CreateInvitationMutationVariables = {data: BodyType<InvitationInput>}
+
+    export const useCreateInvitation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvitation>>, TError,CreateInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvitation>>,
+        TError,
+        CreateInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateInvitationMutationOptions(options));
+    }
+
+export const getRevokeInvitationUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/invitations/${id}`
+}
+
+export const revokeInvitation = async (id: string,
+    operationInput: OperationInput, options?: Parameters<typeof customFetch>[1]): Promise<OkResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OkResult>(getRevokeInvitationUrl(id),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(operationInput)
+  }
+);}
+
+
+
+
+
+export const getRevokeInvitationMutationKey = () => ['revokeInvitation'] as const;
+
+export const getRevokeInvitationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeInvitation>>, TError,RevokeInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeInvitation>>, TError,RevokeInvitationMutationVariables, TContext> => {
+
+const mutationKey = getRevokeInvitationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeInvitation>>, RevokeInvitationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  revokeInvitation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof revokeInvitation>>>
+    export type RevokeInvitationMutationBody = BodyType<OperationInput>
+    export type RevokeInvitationMutationError = ErrorType<unknown>
+    export type RevokeInvitationMutationVariables = {id: string;data: BodyType<OperationInput>}
+
+    export const useRevokeInvitation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeInvitation>>, TError,RevokeInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeInvitation>>,
+        TError,
+        RevokeInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRevokeInvitationMutationOptions(options));
+    }
+
+export const getPeekInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/invite/peek`
+}
+
+export const peekInvitation = async (invitationTokenInput: InvitationTokenInput, options?: Parameters<typeof customFetch>[1]): Promise<InvitationPreview> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InvitationPreview>(getPeekInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(invitationTokenInput)
+  }
+);}
+
+
+
+
+
+export const getPeekInvitationMutationKey = () => ['peekInvitation'] as const;
+
+export const getPeekInvitationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof peekInvitation>>, TError,PeekInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof peekInvitation>>, TError,PeekInvitationMutationVariables, TContext> => {
+
+const mutationKey = getPeekInvitationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof peekInvitation>>, PeekInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  peekInvitation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PeekInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof peekInvitation>>>
+    export type PeekInvitationMutationBody = BodyType<InvitationTokenInput>
+    export type PeekInvitationMutationError = ErrorType<unknown>
+    export type PeekInvitationMutationVariables = {data: BodyType<InvitationTokenInput>}
+
+    export const usePeekInvitation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof peekInvitation>>, TError,PeekInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof peekInvitation>>,
+        TError,
+        PeekInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPeekInvitationMutationOptions(options));
+    }
+
+export const getAcceptInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/invite/accept`
+}
+
+export const acceptInvitation = async (invitationAcceptInput: InvitationAcceptInput, options?: Parameters<typeof customFetch>[1]): Promise<InvitationAccepted> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InvitationAccepted>(getAcceptInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(invitationAcceptInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptInvitationMutationKey = () => ['acceptInvitation'] as const;
+
+export const getAcceptInvitationMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext> => {
+
+const mutationKey = getAcceptInvitationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptInvitation>>, AcceptInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptInvitation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof acceptInvitation>>>
+    export type AcceptInvitationMutationBody = BodyType<InvitationAcceptInput>
+    export type AcceptInvitationMutationError = ErrorType<ErrorResponse>
+    export type AcceptInvitationMutationVariables = {data: BodyType<InvitationAcceptInput>}
+
+    export const useAcceptInvitation = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptInvitation>>,
+        TError,
+        AcceptInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptInvitationMutationOptions(options));
+    }
+
+export const getAcceptInvitationCodeUrl = () => {
+
+
+
+
+  return `/api/v1/invite/accept-code`
+}
+
+export const acceptInvitationCode = async (invitationCodeInput: InvitationCodeInput, options?: Parameters<typeof customFetch>[1]): Promise<InvitationAccepted> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InvitationAccepted>(getAcceptInvitationCodeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(invitationCodeInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptInvitationCodeMutationKey = () => ['acceptInvitationCode'] as const;
+
+export const getAcceptInvitationCodeMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitationCode>>, TError,AcceptInvitationCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptInvitationCode>>, TError,AcceptInvitationCodeMutationVariables, TContext> => {
+
+const mutationKey = getAcceptInvitationCodeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptInvitationCode>>, AcceptInvitationCodeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptInvitationCode(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptInvitationCodeMutationResult = NonNullable<Awaited<ReturnType<typeof acceptInvitationCode>>>
+    export type AcceptInvitationCodeMutationBody = BodyType<InvitationCodeInput>
+    export type AcceptInvitationCodeMutationError = ErrorType<ErrorResponse>
+    export type AcceptInvitationCodeMutationVariables = {data: BodyType<InvitationCodeInput>}
+
+    export const useAcceptInvitationCode = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitationCode>>, TError,AcceptInvitationCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptInvitationCode>>,
+        TError,
+        AcceptInvitationCodeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptInvitationCodeMutationOptions(options));
+    }
+
+export const getDeclineInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/invite/decline`
+}
+
+export const declineInvitation = async (invitationTokenInput: InvitationTokenInput, options?: Parameters<typeof customFetch>[1]): Promise<OkResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OkResult>(getDeclineInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(invitationTokenInput)
+  }
+);}
+
+
+
+
+
+export const getDeclineInvitationMutationKey = () => ['declineInvitation'] as const;
+
+export const getDeclineInvitationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineInvitation>>, TError,DeclineInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof declineInvitation>>, TError,DeclineInvitationMutationVariables, TContext> => {
+
+const mutationKey = getDeclineInvitationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declineInvitation>>, DeclineInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  declineInvitation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeclineInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof declineInvitation>>>
+    export type DeclineInvitationMutationBody = BodyType<InvitationTokenInput>
+    export type DeclineInvitationMutationError = ErrorType<unknown>
+    export type DeclineInvitationMutationVariables = {data: BodyType<InvitationTokenInput>}
+
+    export const useDeclineInvitation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineInvitation>>, TError,DeclineInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof declineInvitation>>,
+        TError,
+        DeclineInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeclineInvitationMutationOptions(options));
+    }
 

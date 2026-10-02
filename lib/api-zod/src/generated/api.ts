@@ -51,12 +51,6 @@ export const signInWithAppleResponseSessionTokenMax = 43;
 
 export const SignInWithAppleResponse = zod.object({
   "sessionToken": zod.string().min(signInWithAppleResponseSessionTokenMin).max(signInWithAppleResponseSessionTokenMax),
-  "workspace": zod.object({
-  "id": zod.string().uuid(),
-  "name": zod.literal("My workspace"),
-  "currency": zod.literal("USD"),
-  "locale": zod.literal("en-US")
-}),
   "user": zod.object({
   "id": zod.string().uuid()
 })
@@ -73,7 +67,7 @@ export const signInDevBodyCodeMax = 4096;
 
 export const SignInDevBody = zod.object({
   "code": zod.string().min(1).max(signInDevBodyCodeMax),
-  "label": zod.enum(['owner-a', 'owner-b'])
+  "label": zod.enum(['owner-a', 'owner-b', 'member-c', 'member-d'])
 })
 
 export const signInDevResponseSessionTokenMin = 43;
@@ -83,12 +77,6 @@ export const signInDevResponseSessionTokenMax = 43;
 
 export const SignInDevResponse = zod.object({
   "sessionToken": zod.string().min(signInDevResponseSessionTokenMin).max(signInDevResponseSessionTokenMax),
-  "workspace": zod.object({
-  "id": zod.string().uuid(),
-  "name": zod.literal("My workspace"),
-  "currency": zod.literal("USD"),
-  "locale": zod.literal("en-US")
-}),
   "user": zod.object({
   "id": zod.string().uuid()
 })
@@ -103,18 +91,277 @@ export const SignOutResponse = zod.void()
 
 
 /**
- * @summary Get the authenticated owner and workspace
+ * @summary Get the authenticated account and its active workspaces
  */
 export const GetMeResponse = zod.object({
-  "workspace": zod.object({
+  "workspaces": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "name": zod.literal("My workspace"),
-  "currency": zod.literal("USD"),
-  "locale": zod.literal("en-US")
-}),
+  "name": zod.string(),
+  "kind": zod.enum(['HOME', 'BUSINESS']),
+  "role": zod.string(),
+  "financial_access": zod.boolean().nullable()
+})),
   "user": zod.object({
-  "id": zod.string().uuid()
+  "id": zod.string().uuid(),
+  "display_name": zod.string().nullable(),
+  "email": zod.string().nullable(),
+  "has_apple": zod.boolean()
 })
+})
+
+
+export const updateAccountNameBodyDisplayNameMax = 60;
+
+
+
+export const UpdateAccountNameBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "display_name": zod.string().max(updateAccountNameBodyDisplayNameMax)
+})
+
+export const UpdateAccountNameResponse = zod.object({
+  "display_name": zod.string().nullable()
+})
+
+
+export const GetConfigResponse = zod.object({
+  "business_enabled": zod.boolean()
+})
+
+
+export const createWorkspaceBodyNameMax = 80;
+
+export const createWorkspaceBodyTimezoneMax = 100;
+
+
+
+export const CreateWorkspaceBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "kind": zod.enum(['HOME', 'BUSINESS']),
+  "name": zod.string().min(1).max(createWorkspaceBodyNameMax),
+  "timezone": zod.string().min(1).max(createWorkspaceBodyTimezoneMax)
+})
+
+export const CreateWorkspaceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "currency": zod.literal("USD"),
+  "kind": zod.enum(['HOME', 'BUSINESS']),
+  "default_timezone": zod.string().nullable()
+})
+
+
+export const GetWorkspaceHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const GetWorkspaceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "currency": zod.literal("USD"),
+  "kind": zod.enum(['HOME', 'BUSINESS']),
+  "default_timezone": zod.string().nullable()
+}).and(zod.object({
+  "role": zod.string(),
+  "financial_access": zod.boolean().nullable(),
+  "worker_id": zod.string().uuid().nullable(),
+  "can": zod.record(zod.string(), zod.boolean())
+}))
+
+
+export const RenameWorkspaceHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const renameWorkspaceBodyNameMax = 80;
+
+
+
+export const RenameWorkspaceBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "name": zod.string().min(1).max(renameWorkspaceBodyNameMax)
+})
+
+export const RenameWorkspaceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "currency": zod.literal("USD"),
+  "kind": zod.enum(['HOME', 'BUSINESS']),
+  "default_timezone": zod.string().nullable()
+})
+
+
+export const ListMembersHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const ListMembersResponse = zod.object({
+  "members": zod.array(zod.object({
+  "user_id": zod.string().uuid(),
+  "display_name": zod.string().nullable(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "financial_access": zod.boolean().nullable(),
+  "joined_at": zod.coerce.date(),
+  "email": zod.string().nullish()
+}))
+})
+
+
+export const RemoveMemberParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const RemoveMemberHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const RemoveMemberBody = zod.object({
+  "operation_id": zod.string().uuid()
+})
+
+export const RemoveMemberResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const ChangeMemberRoleParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const ChangeMemberRoleHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const ChangeMemberRoleBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "role": zod.enum(['ORGANIZER', 'PARTNER', 'OWNER', 'ADMIN', 'LEAD', 'WORKER']),
+  "financial_access": zod.boolean().nullish()
+})
+
+export const ChangeMemberRoleResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const ListInvitationsHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const ListInvitationsResponse = zod.object({
+  "invitations": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "invitee_name": zod.string().nullable(),
+  "email": zod.string().email(),
+  "role": zod.string(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED', 'DECLINED', 'EXPIRED']),
+  "expires_at": zod.coerce.date()
+}))
+})
+
+
+export const CreateInvitationHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const createInvitationBodyEmailMax = 254;
+
+export const createInvitationBodyNameMax = 60;
+
+
+
+export const CreateInvitationBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "role": zod.enum(['PARTNER', 'ADMIN', 'LEAD', 'WORKER']),
+  "email": zod.string().email().max(createInvitationBodyEmailMax),
+  "name": zod.string().max(createInvitationBodyNameMax).optional(),
+  "financial_access": zod.boolean().nullish(),
+  "worker_id": zod.string().uuid().nullish()
+})
+
+export const CreateInvitationResponse = zod.object({
+  "id": zod.string().uuid(),
+  "expires_at": zod.coerce.date(),
+  "token": zod.string().nullable(),
+  "code": zod.string().nullable(),
+  "link": zod.string().nullable(),
+  "already_created": zod.boolean()
+})
+
+
+export const RevokeInvitationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const RevokeInvitationHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const RevokeInvitationBody = zod.object({
+  "operation_id": zod.string().uuid()
+})
+
+export const RevokeInvitationResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const peekInvitationBodyTokenRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const PeekInvitationBody = zod.object({
+  "token": zod.string().regex(peekInvitationBodyTokenRegExp)
+})
+
+export const PeekInvitationResponse = zod.object({
+  "available": zod.boolean(),
+  "workspace_name": zod.string().optional(),
+  "role": zod.string().optional()
+})
+
+
+export const acceptInvitationBodyTokenRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const AcceptInvitationBody = zod.object({
+  "token": zod.string().regex(acceptInvitationBodyTokenRegExp),
+  "operation_id": zod.string().uuid()
+})
+
+export const AcceptInvitationResponse = zod.object({
+  "workspace_id": zod.string().uuid(),
+  "role": zod.string(),
+  "already_member": zod.boolean()
+})
+
+
+export const acceptInvitationCodeBodyEmailMax = 254;
+
+export const acceptInvitationCodeBodyCodeRegExp = new RegExp('^[0-9]{6}$');
+
+
+export const AcceptInvitationCodeBody = zod.object({
+  "email": zod.string().email().max(acceptInvitationCodeBodyEmailMax),
+  "code": zod.string().regex(acceptInvitationCodeBodyCodeRegExp),
+  "operation_id": zod.string().uuid()
+})
+
+export const AcceptInvitationCodeResponse = zod.object({
+  "workspace_id": zod.string().uuid(),
+  "role": zod.string(),
+  "already_member": zod.boolean()
+})
+
+
+export const declineInvitationBodyTokenRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const DeclineInvitationBody = zod.object({
+  "token": zod.string().regex(declineInvitationBodyTokenRegExp)
+})
+
+export const DeclineInvitationResponse = zod.object({
+  "ok": zod.boolean()
 })
 
 

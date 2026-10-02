@@ -5,10 +5,13 @@
  * CrewTally API
  * OpenAPI spec version: 0.1.0
  */
+import type { WorkspaceKind } from './workspaceKind';
 
 export interface Workspace {
   id: string;
-  name: 'My workspace';
+  name: string;
   currency: 'USD';
-  locale: 'en-US';
+  kind: WorkspaceKind;
+  /** @nullable */
+  default_timezone: string | null;
 }

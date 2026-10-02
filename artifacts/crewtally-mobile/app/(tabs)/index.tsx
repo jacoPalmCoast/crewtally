@@ -4,7 +4,7 @@ import { Screen } from '@/components/Screen';
 
 export default function TodayScreen() {
   return (
-    <Screen title="Today">
+    <Screen title="Today" workspaceHeader>
       <EmptyState
         icon="calendar"
         title="Nothing to record yet"

@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { createRouter, type RouterOptions } from "./routes";
 import { logger } from "./lib/logger";
 import { mapError } from "./lib/errors";
+import { pool } from "./db/pool";
+import { joinLanding } from "./routes/invitations";
 
 export function createApp(options: RouterOptions = {}): Express {
   const app: Express = express();
@@ -11,7 +13,7 @@ export function createApp(options: RouterOptions = {}): Express {
   app.use((req, res, next) => {
     res.locals.correlationId = randomUUID();
     res.setHeader("X-Correlation-Id", res.locals.correlationId);
-    if (/(?:^|\/)auth(?:\/|$)/i.test(req.path) || /\/me$/i.test(req.path)) {
+    if (req.get("authorization") || /(?:^|\/)(?:auth|invite|invitations|join)(?:\/|$)/i.test(req.path) || /\/me$/i.test(req.path)) {
       res.setHeader("Cache-Control", "no-store");
     }
     next();
@@ -20,6 +22,14 @@ export function createApp(options: RouterOptions = {}): Express {
   app.use((req, res, next) => {
     const start = process.hrtime.bigint();
     res.on("finish", () => {
+      if (/(?:^|\/)(?:invite|invitations|join)(?:\/|$)/i.test(req.path)) {
+        const operationId = typeof req.body?.operation_id === "string" &&
+          /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(req.body.operation_id)
+          ? req.body.operation_id : undefined;
+        log.info({ correlationId: res.locals.correlationId, operationId, invitationId: res.locals.invitationId,
+          status: res.statusCode }, "invitation request");
+        return;
+      }
       // Only use a registered path template. Unmatched paths must not enter logs.
       log.info({
         correlationId: res.locals.correlationId,
@@ -36,6 +46,7 @@ export function createApp(options: RouterOptions = {}): Express {
   // /api is the Replit proxy prefix; /v1 is also retained for direct callers.
   app.use("/api/v1", router);
   app.use("/v1", router);
+  app.get("/api/join/:token", joinLanding(options.db ?? pool));
   app.use((_req, res) => res.status(404).json({ error: {
     code: "NOT_FOUND", message: "Not found", correlationId: res.locals.correlationId,
   } }));

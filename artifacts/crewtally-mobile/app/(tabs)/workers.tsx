@@ -4,7 +4,7 @@ import { Screen } from '@/components/Screen';
 
 export default function WorkersScreen() {
   return (
-    <Screen title="Workers">
+    <Screen title="Workers" workspaceHeader>
       <EmptyState
         icon="users"
         title="No workers yet"

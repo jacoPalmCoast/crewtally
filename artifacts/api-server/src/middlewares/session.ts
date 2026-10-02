@@ -4,7 +4,6 @@ import { hashSessionToken } from "../auth/apple";
 
 export interface SessionContext {
   userId: string;
-  workspaceId: string;
   sessionId: string;
 }
 
@@ -33,11 +32,10 @@ export function requireSession(db: Pool): RequestHandler {
       const tokenHash = hashSessionToken(match[1]!);
       const result = await db.query<SessionContext>(
         `WITH eligible AS (
-           SELECT s.id AS "sessionId", s.user_id AS "userId", w.id AS "workspaceId",
+           SELECT s.id AS "sessionId", s.user_id AS "userId",
                   (s.last_seen_at <= now() - interval '24 hours') AS extend_session
            FROM sessions s
            JOIN users u ON u.id = s.user_id
-           JOIN workspaces w ON w.owner_id = u.id
            WHERE s.token_hash = $1
              AND s.revoked_at IS NULL
              AND s.expires_at > now()
@@ -51,7 +49,7 @@ export function requireSession(db: Pool): RequestHandler {
            WHERE s.id = e."sessionId"
            RETURNING s.id
          )
-         SELECT e."sessionId", e."userId", e."workspaceId"
+          SELECT e."sessionId", e."userId"
          FROM eligible e
          JOIN touched t ON t.id = e."sessionId"`,
         [tokenHash],

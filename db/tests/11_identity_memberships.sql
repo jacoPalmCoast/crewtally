@@ -321,7 +321,7 @@ begin
   perform create_invitation(ws, u2, gen_random_uuid(), 'PARTNER', null, null, 'lab@example.com', sha256('lab'::bytea), sha256('c'::bytea), ' Sam ');
   assert (select invitee_name from invitations where email = 'lab@example.com') = 'Sam';
   -- Apple credentials: one per client kind
-  insert into apple_credentials (user_id, client_kind) values (u2, 'APP'), (u2, 'WEB');
+  insert into apple_credentials (user_id, client_kind, refresh_token_ciphertext, iv, auth_tag, updated_at) values (u2, 'APP', '\x00'::bytea, '\x00'::bytea, '\x00'::bytea, now()), (u2, 'WEB', '\x00'::bytea, '\x00'::bytea, '\x00'::bytea, now());
   assert (select count(*) from apple_credentials where user_id = u2) = 2;
   raise notice '11b_names_and_linking: PASS';
 end $$;

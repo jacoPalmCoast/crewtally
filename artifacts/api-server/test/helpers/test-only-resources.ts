@@ -1,14 +1,15 @@
 import { Router, type IRouter } from "express";
 import type { Pool } from "pg";
+import { withMember } from "../../src/auth/member";
 
 export function createTestOnlyResourceRouter(db: Pool): IRouter {
   const router: IRouter = Router();
   router.get("/test/resources/:id", async (req, res, next) => {
     try {
-      const result = await db.query<{ id: string }>(
+      const result = await withMember(db, req, "workspace.read", (tx, _member, ws) => tx.query<{ id: string }>(
         "SELECT id FROM test_auth_resources WHERE id = $1 AND workspace_id = $2",
-        [req.params.id, req.ctx!.workspaceId],
-      );
+        [req.params.id, ws],
+      ));
       if (!result.rowCount) {
         res.status(404).json({ error: { code: "NOT_FOUND", message: "Not found" } });
         return;

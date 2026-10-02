@@ -6,7 +6,8 @@ import {
 } from "@workspace/api-zod";
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Pool } from "pg";
-import { validate } from "../lib/validate";
+import type { ZodType } from "zod";
+import type { RequestHandler } from "express";
 import {
   createAppleJwks,
   createSessionToken,
@@ -16,7 +17,7 @@ import {
   verifyAppleIdentityToken,
 } from "../auth/apple";
 import { AuthConfigError, type AuthConfig } from "../auth/config";
-import { requireSession } from "../middlewares/session";
+import { publicRoute, sessionRoute } from "./registration";
 
 export interface AuthRouterOptions {
   db: Pool;
@@ -25,6 +26,18 @@ export interface AuthRouterOptions {
   devSigninCode?: string;
   logger: {
     info: (fields: Record<string, unknown>, message?: string) => void;
+  };
+}
+
+// Preserve Phase 1's Apple/body validation response, except P1b's explicit
+// unknown-developer-label rule (400 INVALID).
+function validateAuth(schema: ZodType, dev = false): RequestHandler {
+  return (req, _res, next) => {
+    const parsed = schema.safeParse(req.body);
+    if (parsed.success) { req.body = parsed.data; next(); return; }
+    const unknownLabel = dev && typeof req.body?.label === "string" &&
+      !["owner-a", "owner-b", "member-c", "member-d"].includes(req.body.label);
+    next(Object.assign(new Error("Invalid input"), { code: unknownLabel ? "22023" : "AUTH_INVALID_INPUT" }));
   };
 }
 
@@ -37,9 +50,6 @@ class DeletedAccountError extends Error {
 interface OwnerSession {
   sessionToken: string;
   userId: string;
-  workspaceId: string;
-  workspaceName: string;
-  currency: string;
 }
 
 async function createOwnerSession(
@@ -63,26 +73,13 @@ async function createOwnerSession(
     const user = userResult.rows[0]!;
     if (user.deleted_at) throw new DeletedAccountError();
 
-    const workspaceResult = await client.query<{
-      id: string;
-      name: string;
-      currency: string;
-    }>(
-      `INSERT INTO workspaces (owner_id, name, currency_code)
-       VALUES ($1, 'My workspace', 'USD')
-       ON CONFLICT (owner_id) DO UPDATE SET owner_id = EXCLUDED.owner_id
-       RETURNING id, name, currency_code::text AS currency`,
-      [user.id],
-    );
-    const workspace = workspaceResult.rows[0]!;
-
     if (refreshToken) {
       if (!tokenEncryptionKey) throw new Error("Apple credential encryption unavailable");
       const encrypted = encryptRefreshToken(refreshToken, tokenEncryptionKey, user.id);
       await client.query(
         `INSERT INTO apple_credentials (user_id, refresh_token_ciphertext, iv, auth_tag)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (user_id) DO UPDATE
+         ON CONFLICT (user_id, client_kind) DO UPDATE
            SET refresh_token_ciphertext = EXCLUDED.refresh_token_ciphertext,
                iv = EXCLUDED.iv,
                auth_tag = EXCLUDED.auth_tag,
@@ -101,9 +98,6 @@ async function createOwnerSession(
     return {
       sessionToken,
       userId: user.id,
-      workspaceId: workspace.id,
-      workspaceName: workspace.name,
-      currency: workspace.currency,
     };
   } catch (error) {
     try {
@@ -126,12 +120,6 @@ function codesMatch(suppliedCode: string, configuredCode: string): boolean {
 function sessionResponse(session: OwnerSession) {
   return SignInWithAppleResponse.parse({
     sessionToken: session.sessionToken,
-    workspace: {
-      id: session.workspaceId,
-      name: session.workspaceName,
-      currency: session.currency,
-      locale: "en-US",
-    },
     user: { id: session.userId },
   });
 }
@@ -144,7 +132,7 @@ export function createAuthRouter(options: AuthRouterOptions): IRouter {
     return decoded.byteLength === 32 && decoded.toString("base64url") === rawNonce;
   });
 
-  router.post("/apple", validate(signInBodySchema), async (req, res, next) => {
+  publicRoute(router, "post", "/apple", validateAuth(signInBodySchema), async (req, res, next) => {
     let config: AuthConfig;
     try {
       config = options.getConfig();
@@ -216,8 +204,8 @@ export function createAuthRouter(options: AuthRouterOptions): IRouter {
   });
 
   if (options.devSigninCode !== undefined) {
-    router.post("/dev", validate(SignInDevBody.strict()), async (req, res, next): Promise<void> => {
-      const body = req.body as { code: string; label: "owner-a" | "owner-b" };
+    publicRoute(router, "post", "/dev", validateAuth(SignInDevBody.strict(), true), async (req, res, next): Promise<void> => {
+      const body = req.body as { code: string; label: "owner-a" | "owner-b" | "member-c" | "member-d" };
       if (!codesMatch(body.code, options.devSigninCode!)) {
         res.status(401).json({ error: {
           code: "INVALID_CREDENTIALS",
@@ -245,7 +233,7 @@ export function createAuthRouter(options: AuthRouterOptions): IRouter {
     });
   }
 
-  router.post("/signout", requireSession(options.db), async (req, res, next) => {
+  sessionRoute(router, options.db, "post", "/signout", async (req, res, next) => {
     const context = req.ctx!;
     try {
       await options.db.query(

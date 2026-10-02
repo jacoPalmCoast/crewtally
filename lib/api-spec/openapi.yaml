@@ -122,7 +122,7 @@ paths:
     get:
       operationId: getMe
       tags: [account]
-      summary: Get the authenticated owner and workspace
+      summary: Get the authenticated account and its active workspaces
       security:
         - bearerAuth: []
       responses:
@@ -141,13 +141,371 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/ServerError"
+    patch:
+      operationId: updateAccountName
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountNameInput" }
+      responses:
+        "200":
+          description: Updated name
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NameResult" }
+  /v1/config:
+    get:
+      operationId: getConfig
+      responses:
+        "200":
+          description: Public feature flag
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicConfig" }
+  /v1/workspaces:
+    post:
+      operationId: createWorkspace
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkspaceInput" }
+      responses:
+        "200": &workspaceResponse
+          description: Workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Workspace" }
+  /v1/workspace:
+    parameters: &workspaceParameters
+      - { $ref: "#/components/parameters/WorkspaceHeader" }
+    get:
+      operationId: getWorkspace
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Workspace and current member permissions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkspaceAccess" }
+    patch:
+      operationId: renameWorkspace
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkspaceNameInput" }
+      responses:
+        "200": *workspaceResponse
+  /v1/members:
+    parameters: *workspaceParameters
+    get:
+      operationId: listMembers
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Active members; emails only with members.manage
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberList" }
+  /v1/members/{userId}:
+    parameters:
+      - { $ref: "#/components/parameters/WorkspaceHeader" }
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      operationId: removeMember
+      security: [{ bearerAuth: [] }]
+      requestBody: &operationBody
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OperationInput" }
+      responses:
+        "200": &okResponse
+          description: Operation completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResult" }
+    patch:
+      operationId: changeMemberRole
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberRoleInput" }
+      responses:
+        "200": *okResponse
+  /v1/invitations:
+    parameters: *workspaceParameters
+    get:
+      operationId: listInvitations
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Pending and recent invitations; never raw credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationList" }
+    post:
+      operationId: createInvitation
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvitationInput" }
+      responses:
+        "200":
+          description: Credentials returned once; replay returns null credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationCreated" }
+  /v1/invitations/{id}:
+    parameters:
+      - { $ref: "#/components/parameters/WorkspaceHeader" }
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      operationId: revokeInvitation
+      security: [{ bearerAuth: [] }]
+      requestBody: *operationBody
+      responses:
+        "200": *okResponse
+  /v1/invite/peek:
+    post:
+      operationId: peekInvitation
+      requestBody: &tokenBody
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvitationTokenInput" }
+      responses:
+        "200":
+          description: Workspace name and role only, or unavailable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationPreview" }
+  /v1/invite/accept:
+    post:
+      operationId: acceptInvitation
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvitationAcceptInput" }
+      responses:
+        "200": &joinedResponse
+          description: Membership created or reactivated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationAccepted" }
+        "410":
+          description: Invitation not available
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /v1/invite/accept-code:
+    post:
+      operationId: acceptInvitationCode
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvitationCodeInput" }
+      responses:
+        "200": *joinedResponse
+        "400":
+          description: Wrong, expired or rate-exhausted code; one opaque answer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /v1/invite/decline:
+    post:
+      operationId: declineInvitation
+      requestBody: *tokenBody
+      responses:
+        "200": *okResponse
 components:
+  parameters:
+    WorkspaceHeader:
+      name: X-Workspace-Id
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: opaque
   schemas:
+    PublicConfig:
+      type: object
+      required: [business_enabled]
+      properties:
+        business_enabled: { type: boolean }
+      additionalProperties: false
+    OperationInput:
+      type: object
+      required: [operation_id]
+      properties:
+        operation_id: { type: string, format: uuid }
+      additionalProperties: false
+    WorkspaceInput:
+      type: object
+      required: [operation_id, kind, name, timezone]
+      properties:
+        operation_id: { type: string, format: uuid }
+        kind: { type: string, enum: [HOME, BUSINESS] }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        timezone: { type: string, minLength: 1, maxLength: 100 }
+      additionalProperties: false
+    WorkspaceNameInput:
+      type: object
+      required: [operation_id, name]
+      properties:
+        operation_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+      additionalProperties: false
+    AccountNameInput:
+      type: object
+      required: [operation_id, display_name]
+      properties:
+        operation_id: { type: string, format: uuid }
+        display_name: { type: string, maxLength: 60 }
+      additionalProperties: false
+    NameResult:
+      type: object
+      required: [display_name]
+      properties:
+        display_name: { type: [string, "null"] }
+    OkResult:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+    WorkspaceAccess:
+      allOf:
+        - { $ref: "#/components/schemas/Workspace" }
+        - type: object
+          required: [role, financial_access, worker_id, can]
+          properties:
+            role: { type: string }
+            financial_access: { type: [boolean, "null"] }
+            worker_id: { type: [string, "null"], format: uuid }
+            can:
+              type: object
+              additionalProperties: { type: boolean }
+    MemberRoleInput:
+      type: object
+      required: [operation_id, role]
+      properties:
+        operation_id: { type: string, format: uuid }
+        role: { type: string, enum: [ORGANIZER, PARTNER, OWNER, ADMIN, LEAD, WORKER] }
+        financial_access: { type: [boolean, "null"] }
+      additionalProperties: false
+    Member:
+      type: object
+      required: [user_id, display_name, name, role, financial_access, joined_at]
+      properties:
+        user_id: { type: string, format: uuid }
+        display_name: { type: [string, "null"] }
+        name: { type: string }
+        role: { type: string }
+        financial_access: { type: [boolean, "null"] }
+        joined_at: { type: string, format: date-time }
+        email: { type: [string, "null"] }
+    MemberList:
+      type: object
+      required: [members]
+      properties:
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/Member" }
+    InvitationInput:
+      type: object
+      required: [operation_id, role, email]
+      properties:
+        operation_id: { type: string, format: uuid }
+        role: { type: string, enum: [PARTNER, ADMIN, LEAD, WORKER] }
+        email: { type: string, format: email, maxLength: 254 }
+        name: { type: string, maxLength: 60 }
+        financial_access: { type: [boolean, "null"] }
+        worker_id: { type: [string, "null"], format: uuid }
+      additionalProperties: false
+    Invitation:
+      type: object
+      required: [id, invitee_name, email, role, status, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        invitee_name: { type: [string, "null"] }
+        email: { type: string, format: email }
+        role: { type: string }
+        status: { type: string, enum: [PENDING, ACCEPTED, REVOKED, DECLINED, EXPIRED] }
+        expires_at: { type: string, format: date-time }
+    InvitationList:
+      type: object
+      required: [invitations]
+      properties:
+        invitations:
+          type: array
+          items: { $ref: "#/components/schemas/Invitation" }
+    InvitationCreated:
+      type: object
+      required: [id, expires_at, token, code, link, already_created]
+      properties:
+        id: { type: string, format: uuid }
+        expires_at: { type: string, format: date-time }
+        token: { type: [string, "null"] }
+        code: { type: [string, "null"] }
+        link: { type: [string, "null"] }
+        already_created: { type: boolean }
+    InvitationTokenInput:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, pattern: "^[A-Za-z0-9_-]{43}$" }
+      additionalProperties: false
+    InvitationAcceptInput:
+      type: object
+      required: [token, operation_id]
+      properties:
+        token: { type: string, pattern: "^[A-Za-z0-9_-]{43}$" }
+        operation_id: { type: string, format: uuid }
+      additionalProperties: false
+    InvitationCodeInput:
+      type: object
+      required: [email, code, operation_id]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        code: { type: string, pattern: "^[0-9]{6}$" }
+        operation_id: { type: string, format: uuid }
+      additionalProperties: false
+    InvitationPreview:
+      type: object
+      required: [available]
+      properties:
+        available: { type: boolean }
+        workspace_name: { type: string }
+        role: { type: string }
+    InvitationAccepted:
+      type: object
+      required: [workspace_id, role, already_member]
+      properties:
+        workspace_id: { type: string, format: uuid }
+        role: { type: string }
+        already_member: { type: boolean }
     HealthStatus:
       type: object
       properties:
@@ -189,7 +547,7 @@ components:
           maxLength: 4096
         label:
           type: string
-          enum: [owner-a, owner-b]
+          enum: [owner-a, owner-b, member-c, member-d]
       required: [code, label]
       additionalProperties: false
     AppleSignInResponse:
@@ -199,20 +557,20 @@ components:
           type: string
           minLength: 43
           maxLength: 43
-        workspace:
-          $ref: "#/components/schemas/Workspace"
         user:
           $ref: "#/components/schemas/User"
-      required: [sessionToken, workspace, user]
+      required: [sessionToken, user]
       additionalProperties: false
     MeResponse:
       type: object
       properties:
-        workspace:
-          $ref: "#/components/schemas/Workspace"
+        workspaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceSummary"
         user:
-          $ref: "#/components/schemas/User"
-      required: [workspace, user]
+          $ref: "#/components/schemas/AccountUser"
+      required: [workspaces, user]
       additionalProperties: false
     Workspace:
       type: object
@@ -222,15 +580,32 @@ components:
           format: uuid
         name:
           type: string
-          const: My workspace
         currency:
           type: string
           const: USD
-        locale:
+        kind:
           type: string
-          const: en-US
-      required: [id, name, currency, locale]
-      additionalProperties: false
+          enum: [HOME, BUSINESS]
+        default_timezone:
+          type: [string, "null"]
+      required: [id, name, currency, kind, default_timezone]
+    WorkspaceSummary:
+      type: object
+      required: [id, name, kind, role, financial_access]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        kind: { type: string, enum: [HOME, BUSINESS] }
+        role: { type: string }
+        financial_access: { type: [boolean, "null"] }
+    AccountUser:
+      type: object
+      required: [id, display_name, email, has_apple]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: [string, "null"] }
+        email: { type: [string, "null"] }
+        has_apple: { type: boolean }
     User:
       type: object
       properties:

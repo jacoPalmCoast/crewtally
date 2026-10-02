@@ -79,7 +79,7 @@ describe("Phase 0 API", () => {
     const cases: { state: string; expected: number; code: string; sql: string; args: unknown[] }[] = [
       { state: "P0002", expected: 404, code: "NOT_FOUND",
         sql: "select set_check_cleared($1,$2,$3,1)", args: [id, randomUUID(), randomUUID()] },
-      { state: "22023", expected: 422, code: "INVALID_INPUT",
+      { state: "22023", expected: 400, code: "INVALID",
         sql: "select fn_earned('HOUR',100,'DAY_PORTION',0.5,null,null)", args: [] },
     ];
     for (const test of cases) {
@@ -98,7 +98,7 @@ describe("Phase 0 API", () => {
     for (const [state, status, code] of [
       ["40001", 409, "CONFLICT"], ["55000", 409, "CONFIRMATION_REQUIRED"],
       ["23505", 409, "CONFLICT"], ["23503", 404, "NOT_FOUND"],
-      ["23514", 422, "INVALID_INPUT"], ["XXXXX", 500, "INTERNAL_ERROR"],
+      ["23514", 422, "ROLE_DOES_NOT_FIT"], ["XXXXX", 500, "INTERNAL_ERROR"],
     ] as const) {
       const probe = express();
       probe.get("/", (_req, _res, next) => next({ code: state }));

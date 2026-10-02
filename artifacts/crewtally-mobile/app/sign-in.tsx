@@ -40,7 +40,6 @@ export default function SignInScreen() {
   if (__DEV__) {
     if (
       Constants.expoConfig?.extra?.appEnv === 'development'
-      && availability === 'unavailable'
       && status === 'signedOut'
       && !busy
     ) {
@@ -128,7 +127,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['bottom', 'left', 'right']} style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={[styles.content, webInset]} keyboardShouldPersistTaps="handled">
         <View style={styles.top}>
           <View style={[styles.mark, { backgroundColor: colors.primary }]}>
@@ -181,7 +180,7 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 48, paddingBottom: 24, justifyContent: 'space-between', gap: 32 },
+  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, justifyContent: 'space-between', gap: 32 },
   top: { gap: 16 },
   mark: { width: 68, height: 68, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 34, fontWeight: '700', letterSpacing: -0.5, marginTop: 8 },

@@ -12,4 +12,6 @@ export type DevSignInInputLabel = typeof DevSignInInputLabel[keyof typeof DevSig
 export const DevSignInInputLabel = {
   'owner-a': 'owner-a',
   'owner-b': 'owner-b',
+  'member-c': 'member-c',
+  'member-d': 'member-d',
 } as const;

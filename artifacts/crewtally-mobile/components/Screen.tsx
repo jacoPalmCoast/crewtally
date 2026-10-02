@@ -8,14 +8,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { WorkspaceHeader } from '@/components/WorkspaceHeader';
 
 export interface ScreenProps {
   title: string;
   children: ReactNode;
   contentStyle?: ViewStyle;
+  /** Show the current workspace and role above the title (workspace routes). */
+  workspaceHeader?: boolean;
 }
 
-export function Screen({ title, children, contentStyle }: ScreenProps) {
+export function Screen({ title, children, contentStyle, workspaceHeader }: ScreenProps) {
   const colors = useColors();
   return (
     <SafeAreaView
@@ -26,6 +29,7 @@ export function Screen({ title, children, contentStyle }: ScreenProps) {
         contentContainerStyle={[styles.content, contentStyle]}
         keyboardShouldPersistTaps="handled"
       >
+        {workspaceHeader ? <WorkspaceHeader /> : null}
         <View style={styles.heading}>
           <Text
             accessibilityRole="header"

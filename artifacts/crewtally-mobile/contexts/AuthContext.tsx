@@ -11,23 +11,28 @@ import React, {
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants from 'expo-constants';
 import { useQueryClient } from '@tanstack/react-query';
-import { getMe, signInWithApple, signOut as signOutRequest } from '@workspace/api-client-react';
+import { signInWithApple, signOut as signOutRequest } from '@workspace/api-client-react';
+import { getMe, type MeResponse, type MyWorkspace } from '@/lib/mobileApi';
 import { createNoncePair } from '@/lib/appleNonce';
 import { setUnauthorizedListener } from '@/lib/authEvents';
 import { clearToken, loadToken, peekToken, saveToken } from '@/lib/sessionStore';
 
 export type AuthStatus = 'restoring' | 'retry' | 'signedOut' | 'signedIn';
-export interface AuthWorkspace { id: string; name: string; currency: string; locale: string }
+export type AuthWorkspace = MyWorkspace;
+export type AuthProfile = MeResponse['user'];
 
 export const SIGN_IN_AGAIN_NOTICE = 'Please sign in again';
 
 export type SignInResult = 'ok' | 'cancelled' | 'failed';
 export type SignOutResult = 'ok' | 'failed';
-export type DeveloperSignInLabel = 'owner-a' | 'owner-b';
+export type DeveloperSignInLabel = 'owner-a' | 'owner-b' | 'member-c' | 'member-d';
 
 interface AuthValue {
   status: AuthStatus;
-  workspace: AuthWorkspace | null;
+  /** Workspaces this person belongs to; null until GET /v1/me has answered. */
+  workspaces: AuthWorkspace[] | null;
+  profile: AuthProfile | null;
+  refreshMe: () => Promise<MeResponse | null>;
   userId: string | null;
   notice: string | null;
   message: string | null;
@@ -59,7 +64,7 @@ function safeSignInMessage(e: unknown): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>('restoring');
-  const [workspace, setWorkspace] = useState<AuthWorkspace | null>(null);
+  const [me, setMe] = useState<MeResponse | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -128,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNotice(SIGN_IN_AGAIN_NOTICE);
       setMessage(null);
       const clearing = clearToken(); // cached token is dropped synchronously
-      setWorkspace(null);
+      setMe(null);
       setUserId(null);
       ownerRef.current = null;
       await runCleanup(clearing);
@@ -169,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const me = await getMe();
       if (gen !== generation.current || peekToken() !== token) return; // superseded by a newer sign-in
       ownerRef.current = me.user.id;
-      setWorkspace(me.workspace);
+      setMe(me);
       setUserId(me.user.id);
       setStatus('signedIn');
     } catch (e) {
@@ -211,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     pendingOwner.current = null;
     ownerRef.current = result.user.id;
-    setWorkspace(result.workspace);
+    setMe(null); // the workspace provider loads GET /v1/me; sign-in itself creates no workspace
     setUserId(result.user.id);
     setNotice(null);
     setStatus('signedIn');
@@ -318,7 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPendingRoute(null);
     ownerRef.current = null;
     setNotice(null);
-    setWorkspace(null);
+    setMe(null);
     setUserId(null);
     setStatus('signedOut');
     const ok = await runCleanup(clearToken());
@@ -326,8 +331,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return ok ? 'ok' : 'failed';
   }, [runCleanup]);
 
+  const refreshMe = useCallback(async (): Promise<MeResponse | null> => {
+    const gen = generation.current;
+    const token = peekToken();
+    const owner = ownerRef.current;
+    if (!token || !owner) return null;
+    const fresh = await getMe();
+    if (gen !== generation.current || peekToken() !== token || ownerRef.current !== owner || fresh.user.id !== owner) {
+      return null;
+    }
+    setMe(fresh);
+    return fresh;
+  }, []);
+
   const rememberRoute = useCallback((path: string) => {
-    if (path && !path.startsWith('/sign-in')) lastRoute.current = path;
+    if (path && !path.startsWith('/sign-in') && path !== '/start') lastRoute.current = path;
   }, []);
 
   const consumePendingRoute = useCallback(() => {
@@ -339,10 +357,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthValue>(
     () => ({
-      status, workspace, userId, notice, message, busy, pendingRoute,
+      status, workspaces: me ? me.workspaces : null, profile: me ? me.user : null, refreshMe, userId, notice, message, busy, pendingRoute,
       signIn, developerSignIn, signOut, retryRestore: () => void restore(), rememberRoute, consumePendingRoute,
     }),
-    [status, workspace, userId, notice, message, busy, pendingRoute, signIn, developerSignIn, signOut, restore, rememberRoute, consumePendingRoute],
+    [status, me, refreshMe, userId, notice, message, busy, pendingRoute, signIn, developerSignIn, signOut, restore, rememberRoute, consumePendingRoute],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -26,6 +26,10 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('@/lib/mobileApi', () => ({
+  ...jest.requireActual('@/lib/mobileApi'),
+  getMe: jest.fn(), getWorkspace: jest.fn(),
+}));
 jest.mock('@workspace/api-client-react', () => ({
   getMe: jest.fn(), signInWithApple: jest.fn(), signInDev: jest.fn(), signOut: jest.fn(), healthCheck: jest.fn(),
   setBaseUrl: jest.fn(), setAuthTokenGetter: jest.fn(), setUnauthorizedHandler: jest.fn(),
@@ -35,6 +39,8 @@ import * as Apple from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import * as Api from '@workspace/api-client-react';
+import * as Mobile from '@/lib/mobileApi';
+import { WorkspaceProvider } from '@/contexts/WorkspaceContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { base64Url, createNoncePair } from '@/lib/appleNonce';
 import { peekToken } from '@/lib/sessionStore';
@@ -42,10 +48,12 @@ import { reportUnauthorized } from '@/lib/authEvents';
 import AccountScreen from '@/app/account';
 import MoreScreen from '@/app/(tabs)/more';
 
-const api = Api as unknown as Record<'getMe' | 'signInWithApple' | 'signInDev' | 'signOut' | 'healthCheck', jest.Mock>;
+const api = { ...(Api as unknown as Record<'signInWithApple' | 'signInDev' | 'signOut' | 'healthCheck', jest.Mock>), getMe: Mobile.getMe as unknown as jest.Mock };
+const getWorkspaceMock = Mobile.getWorkspace as unknown as jest.Mock;
 const apple = Apple as unknown as { signInAsync: jest.Mock };
-const WS = { id: 'abcdef12-0000-4000-8000-000000000000', name: 'My workspace', currency: 'USD', locale: 'en-US' };
-const ME = { workspace: WS, user: { id: 'u1' } };
+const WS = { id: 'abcdef12-0000-4000-8000-000000000000', name: 'My workspace', kind: 'HOME', role: 'ORGANIZER', financial_access: true };
+const ME = { user: { id: 'u1', display_name: null, has_apple: true, email: null }, workspaces: [WS] };
+const DETAIL = { ...WS, currency: 'USD', default_timezone: 'America/Chicago', worker_id: null, can: { 'workspace.read': true, 'members.manage': true } };
 const TOKEN = 'T'.repeat(43);
 const http = (status: number) => Object.assign(new Error('x'), { name: 'ApiError', status });
 
@@ -61,9 +69,10 @@ beforeEach(() => {
   qc = new QueryClient();
   api.getMe.mockResolvedValue(ME);
   apple.signInAsync.mockResolvedValue({ identityToken: 'id', authorizationCode: 'code' });
-  api.signInWithApple.mockResolvedValue({ sessionToken: TOKEN, workspace: WS, user: { id: 'u1' } });
-  api.signInDev.mockResolvedValue({ sessionToken: TOKEN, workspace: WS, user: { id: 'u1' } });
+  api.signInWithApple.mockResolvedValue({ sessionToken: TOKEN, user: { id: 'u1' } });
+  api.signInDev.mockResolvedValue({ sessionToken: TOKEN, user: { id: 'u1' } });
   api.signOut.mockResolvedValue(undefined);
+  getWorkspaceMock.mockResolvedValue(DETAIL);
   jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
@@ -191,12 +200,22 @@ describe('sign in', () => {
   });
 });
 
+describe('sign-in and workspaces', () => {
+  it('sign-in itself brings no workspace; the list comes from GET /v1/me', async () => {
+    const h = await signedIn();
+    expect(h.result.current.workspaces).toBeNull();
+    await act(async () => { await h.result.current.refreshMe(); });
+    expect(h.result.current.workspaces).toEqual([WS]);
+    expect(h.result.current.profile?.has_apple).toBe(true);
+  });
+});
+
 describe('launch restore', () => {
   it('restores a session when /me succeeds', async () => {
     store['crewtally.session.v1'] = TOKEN;
     const h = setup();
     await waitFor(() => expect(h.result.current.status).toBe('signedIn'));
-    expect(h.result.current.workspace?.id).toBe(WS.id);
+    expect(h.result.current.workspaces?.map((w) => w.id)).toEqual([WS.id]);
   });
 
   it('on 401 deletes the token and shows sign-in', async () => {
@@ -256,7 +275,7 @@ describe('later 401', () => {
     const h = await signedIn();
     await act(async () => { h.result.current.rememberRoute('/payments'); });
     await act(async () => { reportUnauthorized({ token: TOKEN }); });
-    api.signInWithApple.mockResolvedValue({ sessionToken: 'N'.repeat(43), workspace: WS, user: { id: 'u2' } });
+    api.signInWithApple.mockResolvedValue({ sessionToken: 'N'.repeat(43), user: { id: 'u2' } });
     await act(async () => { await h.result.current.signIn(); });
     expect(h.result.current.pendingRoute).toBeNull();
   });
@@ -269,7 +288,7 @@ describe('later 401', () => {
     await act(async () => { reportUnauthorized({ token: TOKEN }); });
     expect(qc.getQueryData(['user-scoped'])).toBeUndefined();
     expect(AsyncStorage.clear).not.toHaveBeenCalled();
-    api.signInDev.mockResolvedValue({ sessionToken: 'D'.repeat(43), workspace: WS, user: { id: 'u1' } });
+    api.signInDev.mockResolvedValue({ sessionToken: 'D'.repeat(43), user: { id: 'u1' } });
     await act(async () => { await h.result.current.developerSignIn('owner-secret', 'owner-a'); });
     expect(h.result.current.status).toBe('signedIn');
     expect(h.result.current.pendingRoute).toBe('/payments');
@@ -336,13 +355,13 @@ describe('screens', () => {
     expect(api.signOut).toHaveBeenCalledTimes(1);
   });
 
-  it('Diagnostics shows first 8 chars of workspace ID, version and API status', async () => {
+  it('Diagnostics shows the full workspace ID, first 8 chars of user ID, version and API status', async () => {
     api.healthCheck.mockResolvedValue({ status: 'ok', db: 'ok', migrations: 2 });
-    render(<Harness><MoreScreen /></Harness>, { wrapper });
+    render(<Harness><WorkspaceProvider><MoreScreen /></WorkspaceProvider></Harness>, { wrapper });
     await waitFor(() => screen.getByTestId('go'));
     await act(async () => { fireEvent.press(screen.getByTestId('go')); });
-    await waitFor(() => screen.getByText('abcdef12'));
-    expect(screen.queryByText(WS.id)).toBeNull();
+    await waitFor(() => screen.getByText(WS.id));
+    expect(screen.getByText('u1')).toBeTruthy();
     await waitFor(() => screen.getByText('ok'));
     expect(screen.getByText('App version')).toBeTruthy();
   });

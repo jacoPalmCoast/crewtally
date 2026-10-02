@@ -5,10 +5,10 @@
  * CrewTally API
  * OpenAPI spec version: 0.1.0
  */
-import type { User } from './user';
-import type { Workspace } from './workspace';
+import type { AccountUser } from './accountUser';
+import type { WorkspaceSummary } from './workspaceSummary';
 
 export interface MeResponse {
-  workspace: Workspace;
-  user: User;
+  workspaces: WorkspaceSummary[];
+  user: AccountUser;
 }
