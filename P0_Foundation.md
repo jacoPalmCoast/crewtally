@@ -1,5 +1,7 @@
 # Phase 0 — Foundation
 
+> **Built (history).** This phase is done. Nothing in baseline 2.0 changes it.
+
 > Paste after the Agent has saved `01_PROJECT_BRIEF_AND_INVARIANTS.md` as `replit.md`. Upload the pack folders `db/`, `shared/` and `docs/` into the project root first (drag them into the Replit file tree).
 
 ## Goal

@@ -1,7 +1,7 @@
 -- =====================================================================
--- 0004 — My crew: skills, favorites, private notes, per-project ratings,
---        and a crew summary view.                  Baseline 1.4, Phase 2.
--- Additive only. Loaded after 0003_plans_and_project_use.sql.
+-- 0005 — My crew: skills, favorites, private notes, per-project ratings,
+--        and a crew summary view.                  Baseline 1.4 (was 0004; renumbered in baseline 2.0), Phase 2.
+-- Additive only. Loaded after 0004_plans_and_project_use.sql.
 -- Nothing here touches money. Ratings and notes are private to the owner:
 -- they never appear on receipts, statements, share links or worker exports.
 -- =====================================================================

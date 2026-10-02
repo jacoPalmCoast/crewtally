@@ -1,7 +1,7 @@
 -- =====================================================================
--- 0003 — Plans (Free / Project Pass / Pro), project use, tax thresholds,
---        receipt-link growth counter.            Baseline 1.3, Phase 2.
--- Additive only. Loaded after 0001_schema.sql and 0002_auth.sql.
+-- 0004 — Plans (Free / Project Pass / Pro), project use, tax thresholds,
+--        receipt-link growth counter.            Baseline 1.3 (was 0003; renumbered in baseline 2.0), Phase 2.
+-- Additive only. Loaded after 0003_identity_and_memberships.sql.
 -- Plan limits are enforced here, by triggers, so no code path can skip them.
 -- Limits only stop NEW projects, reopened projects and NEW assignments.
 -- Existing records are never locked: work, payments, receipts, statements

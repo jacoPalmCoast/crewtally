@@ -1,5 +1,7 @@
 # Phase 1 — Sign in with Apple, sessions, workspace isolation
 
+> **Built (history).** This phase is done. Baseline 2.0 changes it in Phase 1b: sign-in no longer creates a workspace, the session no longer carries a workspace, and the isolation harness becomes the role matrix. Where this file and P1b differ, P1b wins.
+
 > Before pasting, add these Replit Secrets (from your Apple Developer account):
 > - `APPLE_TEAM_ID`
 > - `APPLE_KEY_ID`
@@ -121,6 +123,10 @@ Don't store the Apple email or name. Request no scopes. The app doesn't need the
 - Sign in with Apple in Expo Go. You land on the tabs.
 - Kill the app and reopen it. You're still signed in.
 - Sign out, then sign in again. You get the same workspace (More → Diagnostics shows the first 8 characters of the workspace ID; add that line to Diagnostics in this phase).
+
+## Built later in Phase 1 (history)
+- **Developer sign-in:** `POST /v1/auth/dev`. It works only when `APP_ENV=development` and the Secret `DEV_SIGNIN_CODE` is set; otherwise it refuses. The code is compared in constant time, and the route is rate-limited like the other `/v1/auth/*` routes. Labels `owner-a` and `owner-b`; the user's `apple_sub` is `dev:<label>`. The mobile sign-in screen shows **Developer sign-in (test only)** in development builds only. Phase 1b adds `member-c` and `member-d`.
+- **Secrets from now on:** the owner makes each secret value in the Shell (`openssl rand -base64 32`, or `openssl rand -hex 8` for `DEV_SIGNIN_CODE`), pastes it into Secrets, then clears the Shell. The Agent never generates a secret value in chat. The production `TOKEN_ENCRYPTION_KEY` (TestFlight checkpoint) is made the same way, never copied from development.
 
 ## End of phase
 Run the gate from `replit.md`. Stop and say "Phase 1 ready for review".
