@@ -337,6 +337,14 @@ paths:
       requestBody: *tokenBody
       responses:
         "200": *okResponse
+        "429":
+          description: More than 20 invitation decline requests per client IP in one minute
+          headers:
+            Retry-After:
+              schema: { type: integer }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 components:
   parameters:
     WorkspaceHeader:

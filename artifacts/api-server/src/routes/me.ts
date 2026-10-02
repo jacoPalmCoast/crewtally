@@ -13,7 +13,16 @@ export function createMeRouter(db: Pool): IRouter {
         `select id, display_name, email, (apple_sub is not null and apple_sub not like 'dev:%') as has_apple,
          my_workspaces(id) as workspaces from users where id = $1 and deleted_at is null`, [req.ctx!.userId],
       );
-      const { workspaces, ...user } = result.rows[0];
+      const row = result.rows[0];
+      if (!row) {
+        res.status(401).json({ error: {
+          code: "SESSION_EXPIRED",
+          message: "Session expired",
+          correlationId: res.locals.correlationId,
+        } });
+        return;
+      }
+      const { workspaces, ...user } = row;
       res.json({ user, workspaces });
     } catch (error) { next(error); }
   });

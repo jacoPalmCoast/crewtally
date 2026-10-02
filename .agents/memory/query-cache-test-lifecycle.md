@@ -7,4 +7,4 @@ Explicitly clear every test-owned QueryClient during teardown when its cache has
 
 **Why:** TanStack Query's default five-minute garbage-collection timer can keep Node running after all assertions pass. A gate command timed out despite a green Jest summary; unmounting the test tree alone did not cancel that cache timer.
 
-**How to apply:** For tests that populate query caches, pair fixture creation with cache cleanup in `afterEach` or `finally`. Confirm that the test command exits successfully; do not conceal leaked resources with `--forceExit`.
+**How to apply:** For tests that populate query caches, pair fixture creation with cache cleanup in `afterEach` or `finally`. Await mutation completion before disposing clients: late mutation callbacks can rearm GC timers after clearing. Where GC itself is not under test, fixture clients may disable it while still cancelling queries and clearing caches. Confirm that the test command exits successfully; do not conceal leaked resources with `--forceExit`.

@@ -20,9 +20,6 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "appEnv": "development"
     }
   }
 }

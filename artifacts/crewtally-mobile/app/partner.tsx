@@ -80,7 +80,12 @@ export default function PartnerScreen() {
   const resend = useMutation({
     // Revoke this invitation, then create a new one to the same email: new link, new code, new 7 days.
     mutationFn: async (inv: { id: string; email: string; name: string | null }) => {
-      await revokeInvitation(inv.id, revokeOp.idFor(inv.id));
+      try {
+        await revokeInvitation(inv.id, revokeOp.idFor(inv.id));
+      } catch (e) {
+        if ((e as { status?: number } | null)?.status !== 404) throw e;
+        // It disappeared between listing and revoke: still create a replacement.
+      }
       revokeOp.done();
       const body = { role: 'PARTNER' as const, email: inv.email, ...(inv.name ? { name: inv.name } : {}) };
       return createInvitation(body, inviteOp.idFor(`resend|${inv.id}`));

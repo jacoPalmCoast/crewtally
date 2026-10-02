@@ -116,6 +116,33 @@ async function invite(owner: Awaited<ReturnType<typeof homeFixture>>["owner"], e
 }
 
 describe("identity and workspace writes", () => {
+  it("soft-deleted users receive the unchanged 401 SESSION_EXPIRED envelope", async () => {
+    const app = appFor(), h = createTenancyHarness(db, app);
+    const user = await h.createUser("deleted");
+    const agent = (await h.agentFor(user)).agent;
+    await db.query("update users set deleted_at=now(), apple_sub=null, email=null, email_verified_at=null where id=$1", [user.userId]);
+    const result = await agent.get("/v1/me");
+    expect(result.status).toBe(401);
+    expect(result.body).toEqual({ error: { code: "SESSION_EXPIRED", message: "Session expired", correlationId: expect.any(String) } });
+  });
+  it("returns SESSION_EXPIRED if the user disappears after session validation but before GET /me", async () => {
+    const app = appFor(), h = createTenancyHarness(db, app);
+    const user = await h.createUser("deleted-race");
+    const agent = (await h.agentFor(user)).agent;
+    const query = db.query.bind(db);
+    const spy = vi.spyOn(db, "query").mockImplementation((async (text: string, values?: unknown[]) => {
+      const result = await query(text, values);
+      if (text.includes("WITH eligible AS")) {
+        await query("update users set deleted_at=now(), apple_sub=null, email=null, email_verified_at=null where id=$1", [user.userId]);
+      }
+      return result;
+    }) as never);
+    try {
+      const result = await agent.get("/v1/me");
+      expect(result.status).toBe(401);
+      expect(result.body).toEqual({ error: { code: "SESSION_EXPIRED", message: "Session expired", correlationId: expect.any(String) } });
+    } finally { spy.mockRestore(); }
+  });
   it("creates HOME once, separates users and detects changed-body and concurrent replays", async () => {
     const app = appFor(), h = createTenancyHarness(db, app);
     const first = await h.createUser("create"), second = await h.createUser("second");
@@ -174,6 +201,43 @@ describe("identity and workspace writes", () => {
 });
 
 describe("invitation credentials and committed errors", () => {
+  it("persists only the request hash of peppered code/hash-token forms, never the raw credentials", async () => {
+    const { owner, h, partner } = await homeFixture();
+    const { body, data } = await invite(owner);
+    const agent = (await h.agentFor(partner)).agent;
+    const byCode = { ...op(), email: body.email, code: data.code };
+    expect((await agent.post("/v1/invite/accept-code").send(byCode)).status).toBe(200);
+    const codeStored = (await db.query(
+      "select request_hash from user_idempotency_keys where user_id=$1 and operation_id=$2",
+      [partner.userId, byCode.operation_id])).rows[0].request_hash;
+    expect(codeStored).toBe(requestHash(partner.userId, {
+      route: "POST /invite/accept-code", operation_id: byCode.operation_id, email: body.email,
+      code_hash: invitationCodeHash(env.CODE_PEPPER, body.email, data.code).toString("hex"),
+    }));
+    expect(codeStored === requestHash(partner.userId, byCode)).toBe(false);
+    expect(codeStored === requestHash(partner.userId, { route: "POST /invite/accept-code", ...byCode })).toBe(false);
+    const second = await homeFixture();
+    const secondInvite = await invite(second.owner);
+    const byToken = { ...op(), token: secondInvite.data.token };
+    expect((await agent.post("/v1/invite/accept").send(byToken)).status).toBe(200);
+    const tokenStored = (await db.query(
+      "select request_hash from user_idempotency_keys where user_id=$1 and operation_id=$2",
+      [partner.userId, byToken.operation_id])).rows[0].request_hash;
+    expect(tokenStored).toBe(requestHash(partner.userId, {
+      route: "POST /invite/accept", operation_id: byToken.operation_id, token_hash: tokenHash(byToken.token).toString("hex"),
+    }));
+    expect(tokenStored === requestHash(partner.userId, byToken)).toBe(false);
+    expect(tokenStored === requestHash(partner.userId, { route: "POST /invite/accept", ...byToken })).toBe(false);
+  });
+  it("limits anonymous decline to 20 calls per minute and returns 429 on the 21st", async () => {
+    const app = appFor();
+    const token = randomBytes(32).toString("base64url");
+    for (let n = 0; n < 20; n++) expect((await request(app).post("/v1/invite/decline").send({ token })).status).toBe(200);
+    const blocked = await request(app).post("/v1/invite/decline").send({ token });
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error.code).toBe("TOO_MANY");
+    expect(Number(blocked.headers["retry-after"])).toBeGreaterThan(0);
+  });
   it("commits expired-link status even when the HTTP result is 410", async () => {
     const { owner, h, partner, app } = await homeFixture();
     const { data } = await invite(owner);
@@ -362,28 +426,47 @@ describe("function-level refusals, scoping and immediate removal", () => {
 });
 
 describe("actor is transaction scoped", () => {
-  it("record_payment through a test-only withMember route records the caller and refuses a forged actor", async () => {
+  it("record_payment records the caller; the database trigger rejects a forged rate actor and cleans the same connection", async () => {
     const app = appFor(), h = createTenancyHarness(db, app);
     const owner = await h.createOwner();
     const worker = (await db.query("insert into workers(workspace_id,display_name) values($1,'W') returning id", [owner.workspaceId])).rows[0].id;
     const project = (await db.query("insert into projects(workspace_id,name,timezone) values($1,'P','UTC') returning id", [owner.workspaceId])).rows[0].id;
     const assignment = (await db.query("insert into assignments(workspace_id,project_id,worker_id,start_date) values($1,$2,$3,'2026-10-01') returning id",
       [owner.workspaceId, project, worker])).rows[0].id;
+    const other = await h.createUser("other-actor");
+    // A one-connection pool proves cleanup on the exact connection used by both transactions.
+    const actorDb = new pg.Pool({ connectionString: process.env.DATABASE_URL, options: `-c search_path=${schema}`, max: 1 });
     const router = Router();
-    memberRoute(router, db, "post", "/test/payment", "money.record", async (tx, _member, ws, req) => {
-      if (req.body.recorded_by && req.body.recorded_by !== req.ctx!.userId) {
-        throw Object.assign(new Error("Actor mismatch"), { code: "CT403" });
-      }
+    let transactionPid: number | undefined;
+    memberRoute(router, actorDb, "post", "/test/payment", "money.record", async (tx, _member, ws, req) => {
+      transactionPid = (await tx.query("select pg_backend_pid() as pid")).rows[0].pid;
       const result = await tx.query("select record_payment($1,$2,'2026-10-02','CASH',null,100,'W',null,$3) as result",
         [ws, req.body.operation_id, JSON.stringify([{ assignment_id: assignment, amount_minor: 100 }])]);
       return result.rows[0].result;
     });
-    const moneyApp = createApp({ db, env, logger, testOnlyProtectedRouter: router });
-    const moneyAgent = (await createTenancyHarness(db, moneyApp).agentFor({ userId: owner.userId }, owner.workspaceId)).agent;
-    expect((await moneyAgent.post("/v1/test/payment").send(op())).status).toBe(200);
-    expect((await db.query("select recorded_by from payments where workspace_id=$1", [owner.workspaceId])).rows[0].recorded_by).toBe(owner.userId);
-    expect((await moneyAgent.post("/v1/test/payment").send({ ...op(), recorded_by: randomUUID() })).status).toBe(403);
-    const clean = await db.query("select nullif(current_setting('crewtally.actor',true),'') as actor");
-    expect(clean.rows[0].actor).toBeNull();
+    memberRoute(router, actorDb, "post", "/test/forged-rate", "rates.set", async (tx, _member, ws) => {
+      transactionPid = (await tx.query("select pg_backend_pid() as pid")).rows[0].pid;
+      // No handler-level recorded_by check: rejection must be the provided database trigger.
+      await tx.query(`insert into rate_agreements(workspace_id,assignment_id,effective_from,pay_basis,rate_minor,recorded_by)
+        values($1,$2,'2026-10-01','HOUR',100,$3)`, [ws, assignment, other.userId]);
+      return { ok: true };
+    });
+    try {
+      const moneyApp = createApp({ db: actorDb, env, logger, testOnlyProtectedRouter: router });
+      const moneyAgent = (await createTenancyHarness(actorDb, moneyApp).agentFor({ userId: owner.userId }, owner.workspaceId)).agent;
+      const assertCleanSameConnection = async () => {
+        const clean = await actorDb.query("select pg_backend_pid() as pid, nullif(current_setting('crewtally.actor',true),'') as actor");
+        expect(clean.rows[0].pid).toBe(transactionPid);
+        expect(clean.rows[0].actor).toBeNull();
+      };
+      expect((await moneyAgent.post("/v1/test/payment").send(op())).status).toBe(200);
+      expect((await db.query("select recorded_by from payments where workspace_id=$1", [owner.workspaceId])).rows[0].recorded_by).toBe(owner.userId);
+      await assertCleanSameConnection();
+      const forged = await moneyAgent.post("/v1/test/forged-rate").send(op());
+      expect(forged.status).toBe(403);
+      expect(forged.body.error.code).toBe("FORBIDDEN");
+      expect((await db.query("select count(*)::int as n from rate_agreements where assignment_id=$1", [assignment])).rows[0].n).toBe(0);
+      await assertCleanSameConnection();
+    } finally { await actorDb.end(); }
   });
 });

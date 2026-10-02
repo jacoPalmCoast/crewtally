@@ -71,12 +71,20 @@ export function createInvitationRouter(db: Pool, env: NodeJS.ProcessEnv) {
       const body = byCode
         ? operation.extend({ email: emailSchema, code: z.string().regex(/^\d{6}$/) }).strict().parse(req.body)
         : operation.extend({ token: tokenSchema }).strict().parse(req.body);
+      // Never expose a low-entropy code to an unkeyed, offline-guessable request hash.
+      const credentialHash = "token" in body
+        ? tokenHash(body.token)
+        : invitationCodeHash(config(env).pepper, body.email, body.code);
+      const hashInput = "token" in body
+        ? { route: "POST /invite/accept", operation_id: body.operation_id, token_hash: credentialHash.toString("hex") }
+        : { route: "POST /invite/accept-code", operation_id: body.operation_id, email: body.email,
+          code_hash: credentialHash.toString("hex") };
       const result = await inTransaction(db, tx => withUserIdempotency(tx, req.ctx!.userId, body.operation_id,
-        { route: byCode ? "POST /invite/accept-code" : "POST /invite/accept", ...body }, async () => {
+        hashInput, async () => {
           const result = "token" in body
-            ? await tx.query("select accept_invitation($1,$2) as result", [req.ctx!.userId, tokenHash(body.token)])
+            ? await tx.query("select accept_invitation($1,$2) as result", [req.ctx!.userId, credentialHash])
             : await tx.query("select accept_invitation_code($1,$2,$3) as result",
-              [req.ctx!.userId, body.email, invitationCodeHash(config(env).pepper, body.email, body.code)]);
+              [req.ctx!.userId, body.email, credentialHash]);
           return result.rows[0].result;
         }));
       // COMMIT precedes mapping error results: attempts and expiry/revocation changes must survive.
@@ -88,7 +96,7 @@ export function createInvitationRouter(db: Pool, env: NodeJS.ProcessEnv) {
   };
   sessionRoute(router, db, "post", "/invite/accept", accept(false));
   sessionRoute(router, db, "post", "/invite/accept-code", invitationLimiter(10, true), accept(true));
-  publicRoute(router, "post", "/invite/decline", async (req, res, next) => {
+  publicRoute(router, "post", "/invite/decline", invitationLimiter(20), async (req, res, next) => {
     try {
       const { token } = z.object({ token: tokenSchema }).strict().parse(req.body);
       const result = await db.query("select decline_invitation($1) as result", [tokenHash(token)]);

@@ -31,7 +31,12 @@ export default function MoreScreen() {
     setLeaving(true);
     setLeaveError(null);
     try {
-      await removeMember(userId, leaveOp.idFor(`leave|${workspaceId}`));
+      try {
+        await removeMember(userId, leaveOp.idFor(`leave|${workspaceId}`));
+      } catch (e) {
+        if ((e as { status?: number } | null)?.status !== 404) throw e;
+        // Already removed/left: complete the same local cleanup and navigation.
+      }
       leaveOp.done();
       await afterLeaving();
       router.replace('/switcher' as never);

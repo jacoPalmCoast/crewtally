@@ -1633,7 +1633,7 @@ return customFetch<OkResult>(getDeclineInvitationUrl(),
 
 export const getDeclineInvitationMutationKey = () => ['declineInvitation'] as const;
 
-export const getDeclineInvitationMutationOptions = <TError = ErrorType<unknown>,
+export const getDeclineInvitationMutationOptions = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineInvitation>>, TError,DeclineInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof declineInvitation>>, TError,DeclineInvitationMutationVariables, TContext> => {
 
@@ -1662,10 +1662,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeclineInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof declineInvitation>>>
     export type DeclineInvitationMutationBody = BodyType<InvitationTokenInput>
-    export type DeclineInvitationMutationError = ErrorType<unknown>
+    export type DeclineInvitationMutationError = ErrorType<ErrorResponse>
     export type DeclineInvitationMutationVariables = {data: BodyType<InvitationTokenInput>}
 
-    export const useDeclineInvitation = <TError = ErrorType<unknown>,
+    export const useDeclineInvitation = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineInvitation>>, TError,DeclineInvitationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof declineInvitation>>,

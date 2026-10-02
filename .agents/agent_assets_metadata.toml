@@ -28,3 +28,17 @@ mtime_ms = 1790973983536
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:d545b864-b445-49e9-8fb5-949b581421df/1e1b8a3c-bf7d-4124-9edd-d927784ae799/b088de49-f1c8-40a7-8e2a-fac1682e0eb8"
 storage_version_token = "1790973984031575"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "g_RIxCabDjcRs_rdvmWeg"
+uri = "file://docs/PHASE_1B_FIXES_GATE.md"
+type = "text"
+title = "Phase 1b fixes — full gate"
+description = "Actual changed code for all six fixes, regression evidence, suite counts, restart lines, development counts and migration ledger, and all changed files."
+logical_id = "bc24a218-8ca7-495a-9673-6b68df80417d"
+content_hash = "sha256:343c1e0ca9c5e76fb6463f69c90b66cafadb3f45f4dca073ac0b7c0d2c94d10f"
+size = 32116
+mtime_ms = 1790976135832
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:d545b864-b445-49e9-8fb5-949b581421df/bc24a218-8ca7-495a-9673-6b68df80417d/475b8d2e-3ab3-4851-8504-fb6004b9a591"
+storage_version_token = "1790976136280049"
+content_type = "text/markdown"
