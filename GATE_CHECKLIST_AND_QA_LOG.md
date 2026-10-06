@@ -64,7 +64,7 @@ Web-specific (from Phase 1c):
 |---|---|---|---|---|---|---|---|---|
 | | P0 | | n/a | | | n/a | | |
 | | P1 | | n/a | | | n/a | | |
-| | P1b | | | | | n/a | | |
+| 2026-10-06 | P1b | | | | Owner try-it: PASS (8/8 steps; iPhone SE; Expo Go; developer sign-in) | n/a | | CLOSED |
 | | P1c | | | | | | | |
 | | P2 | | | | | | | |
 | | TestFlight checkpoint | n/a | n/a | n/a | Real Sign in with Apple on your iPhone: | n/a | | |
@@ -78,6 +78,16 @@ Web-specific (from Phase 1c):
 | | B2 | | | | | | | |
 | | B3 | | | | | | | |
 | | B4 (Release 1.1) | | | | | | | |
+
+### Phase 1b — CLOSED
+
+- Owner try-it: **PASS — all 8 steps passed** (owner-reported).
+- Date: **2026-10-06**.
+- Device: **iPhone SE**.
+- Expo Go build: **development build in Expo Go**; Expo Go version/build number was not provided.
+- Sign-in: **developer sign-in** using `owner-a`, `owner-b`, `member-c`, and `member-d`.
+- Carried check: **real Apple sign-in remains carried to the first TestFlight build**.
+- Status: **Phase 1b CLOSED**. **Phase 1c not started**.
 
 **TestFlight checkpoint (after Phase 2):** the first real build through Replit's publishing flow. Pass = Sign in with Apple works on your own iPhone, email sign-in reaches the same account after you link it, and the carried Phase 1 item is closed. (The web app isn't deployed to production until Phase 8, so the web isn't part of this check.) Record the build number here.
 
