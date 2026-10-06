@@ -25,6 +25,10 @@ timeoutMs = 20000
 APP_ENV = "development"
 PUBLIC_BASE_URL = "https://d545b864-b445-49e9-8fb5-949b581421df-00-nan59254efun.janeway.replit.dev/api"
 
+[userenv.shared]
+EMAIL_FROM = "CrewTally <codes@crewtallyapp.com>"
+EMAIL_PROVIDER = "resend"
+
 [nix]
 channel = "stable-25_05"
 packages = ["glib", "nspr", "nss"]
