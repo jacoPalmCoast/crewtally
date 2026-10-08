@@ -21,11 +21,22 @@ import type {
 
 import type {
   AccountNameInput,
+  AdjustmentInput,
   AppleSignInRequest,
   AppleSignInResponse,
+  ApplyRateChange200,
+  Assignment,
+  AssignmentInput,
   BadRequestResponse,
+  ClearPayment200,
+  ClearanceInput,
+  CorrectPayment200,
   DevSignInInput,
+  DomainConflictResponse,
+  DomainErrorResponse,
+  DomainInvalidResponse,
   ErrorResponse,
+  GetWorkerYearPaid200Item,
   HealthStatus,
   InvitationAcceptInput,
   InvitationAccepted,
@@ -35,17 +46,47 @@ import type {
   InvitationList,
   InvitationPreview,
   InvitationTokenInput,
+  ListBalances200Item,
+  ListBalancesParams,
+  ListHistory200Item,
+  ListHistoryParams,
+  ListPaymentsParams,
+  ListWorkEntriesParams,
+  MarkRestNoWork200,
   MeResponse,
   MemberList,
   MemberRoleInput,
   NameResult,
+  NoWorkInput,
   NotFoundResponse,
   OkResult,
   OperationInput,
+  Payment,
+  PaymentCorrectionInput,
+  PaymentInput,
+  PaymentResult,
+  PreviewRateChange200,
+  Project,
+  ProjectInput,
+  ProjectUpdateInput,
   PublicConfig,
+  RateAgreement,
+  RateChangeInput,
   RateLimitedResponse,
+  RatePreviewInput,
+  RecordAdjustment200,
+  RecordReimbursement200,
+  RecordWork200,
+  ReimbursementInput,
+  ReversalInput,
+  ReversalResult,
   ServerErrorResponse,
   UnauthorizedResponse,
+  WorkEntry,
+  WorkInput,
+  Worker,
+  WorkerInput,
+  WorkerUpdateInput,
   Workspace,
   WorkspaceAccess,
   WorkspaceInput,
@@ -1674,5 +1715,2135 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeclineInvitationMutationOptions(options));
+    }
+
+export const getListProjectsUrl = () => {
+
+
+
+
+  return `/api/v1/projects`
+}
+
+export const listProjects = async ( options?: Parameters<typeof customFetch>[1]): Promise<Project[]> => {
+
+  return customFetch<Project[]>(getListProjectsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListProjectsQueryKey = () => {
+    return [
+    `/api/v1/projects`
+    ] as const;
+    }
+
+
+export const getListProjectsQueryOptions = <TData = Awaited<ReturnType<typeof listProjects>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProjectsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProjects>>> = ({ signal }) => listProjects({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProjects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListProjectsQueryResult = NonNullable<Awaited<ReturnType<typeof listProjects>>>
+export type ListProjectsQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListProjects<TData = Awaited<ReturnType<typeof listProjects>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListProjectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateProjectUrl = () => {
+
+
+
+
+  return `/api/v1/projects`
+}
+
+export const createProject = async (projectInput: ProjectInput, options?: Parameters<typeof customFetch>[1]): Promise<Project> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Project>(getCreateProjectUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(projectInput)
+  }
+);}
+
+
+
+
+
+export const getCreateProjectMutationKey = () => ['createProject'] as const;
+
+export const getCreateProjectMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProject>>, TError,CreateProjectMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createProject>>, TError,CreateProjectMutationVariables, TContext> => {
+
+const mutationKey = getCreateProjectMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProject>>, CreateProjectMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createProject(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateProjectMutationResult = NonNullable<Awaited<ReturnType<typeof createProject>>>
+    export type CreateProjectMutationBody = BodyType<ProjectInput>
+    export type CreateProjectMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type CreateProjectMutationVariables = {data: BodyType<ProjectInput>}
+
+    export const useCreateProject = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProject>>, TError,CreateProjectMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createProject>>,
+        TError,
+        CreateProjectMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateProjectMutationOptions(options));
+    }
+
+export const getGetProjectUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/projects/${id}`
+}
+
+export const getProject = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Project> => {
+
+  return customFetch<Project>(getGetProjectUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProjectQueryKey = (id: string,) => {
+    return [
+    `/api/v1/projects/${id}`
+    ] as const;
+    }
+
+
+export const getGetProjectQueryOptions = <TData = Awaited<ReturnType<typeof getProject>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProjectQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProject>>> = ({ signal }) => getProject(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProjectQueryResult = NonNullable<Awaited<ReturnType<typeof getProject>>>
+export type GetProjectQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useGetProject<TData = Awaited<ReturnType<typeof getProject>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProjectQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateProjectUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/projects/${id}`
+}
+
+export const updateProject = async (id: string,
+    projectUpdateInput: ProjectUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<Project> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Project>(getUpdateProjectUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(projectUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateProjectMutationKey = () => ['updateProject'] as const;
+
+export const getUpdateProjectMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProject>>, TError,UpdateProjectMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateProject>>, TError,UpdateProjectMutationVariables, TContext> => {
+
+const mutationKey = getUpdateProjectMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProject>>, UpdateProjectMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateProject(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateProjectMutationResult = NonNullable<Awaited<ReturnType<typeof updateProject>>>
+    export type UpdateProjectMutationBody = BodyType<ProjectUpdateInput>
+    export type UpdateProjectMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type UpdateProjectMutationVariables = {id: string;data: BodyType<ProjectUpdateInput>}
+
+    export const useUpdateProject = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProject>>, TError,UpdateProjectMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateProject>>,
+        TError,
+        UpdateProjectMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateProjectMutationOptions(options));
+    }
+
+export const getListWorkersUrl = () => {
+
+
+
+
+  return `/api/v1/workers`
+}
+
+export const listWorkers = async ( options?: Parameters<typeof customFetch>[1]): Promise<Worker[]> => {
+
+  return customFetch<Worker[]>(getListWorkersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListWorkersQueryKey = () => {
+    return [
+    `/api/v1/workers`
+    ] as const;
+    }
+
+
+export const getListWorkersQueryOptions = <TData = Awaited<ReturnType<typeof listWorkers>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWorkers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListWorkersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listWorkers>>> = ({ signal }) => listWorkers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listWorkers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListWorkersQueryResult = NonNullable<Awaited<ReturnType<typeof listWorkers>>>
+export type ListWorkersQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListWorkers<TData = Awaited<ReturnType<typeof listWorkers>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWorkers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListWorkersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateWorkerUrl = () => {
+
+
+
+
+  return `/api/v1/workers`
+}
+
+export const createWorker = async (workerInput: WorkerInput, options?: Parameters<typeof customFetch>[1]): Promise<Worker> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Worker>(getCreateWorkerUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workerInput)
+  }
+);}
+
+
+
+
+
+export const getCreateWorkerMutationKey = () => ['createWorker'] as const;
+
+export const getCreateWorkerMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWorker>>, TError,CreateWorkerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createWorker>>, TError,CreateWorkerMutationVariables, TContext> => {
+
+const mutationKey = getCreateWorkerMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWorker>>, CreateWorkerMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createWorker(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWorkerMutationResult = NonNullable<Awaited<ReturnType<typeof createWorker>>>
+    export type CreateWorkerMutationBody = BodyType<WorkerInput>
+    export type CreateWorkerMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type CreateWorkerMutationVariables = {data: BodyType<WorkerInput>}
+
+    export const useCreateWorker = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWorker>>, TError,CreateWorkerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createWorker>>,
+        TError,
+        CreateWorkerMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateWorkerMutationOptions(options));
+    }
+
+export const getGetWorkerUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/workers/${id}`
+}
+
+export const getWorker = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Worker> => {
+
+  return customFetch<Worker>(getGetWorkerUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkerQueryKey = (id: string,) => {
+    return [
+    `/api/v1/workers/${id}`
+    ] as const;
+    }
+
+
+export const getGetWorkerQueryOptions = <TData = Awaited<ReturnType<typeof getWorker>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorker>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkerQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorker>>> = ({ signal }) => getWorker(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorker>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkerQueryResult = NonNullable<Awaited<ReturnType<typeof getWorker>>>
+export type GetWorkerQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useGetWorker<TData = Awaited<ReturnType<typeof getWorker>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorker>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkerQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateWorkerUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/workers/${id}`
+}
+
+export const updateWorker = async (id: string,
+    workerUpdateInput: WorkerUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<Worker> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Worker>(getUpdateWorkerUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workerUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateWorkerMutationKey = () => ['updateWorker'] as const;
+
+export const getUpdateWorkerMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWorker>>, TError,UpdateWorkerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateWorker>>, TError,UpdateWorkerMutationVariables, TContext> => {
+
+const mutationKey = getUpdateWorkerMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWorker>>, UpdateWorkerMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateWorker(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateWorkerMutationResult = NonNullable<Awaited<ReturnType<typeof updateWorker>>>
+    export type UpdateWorkerMutationBody = BodyType<WorkerUpdateInput>
+    export type UpdateWorkerMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type UpdateWorkerMutationVariables = {id: string;data: BodyType<WorkerUpdateInput>}
+
+    export const useUpdateWorker = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWorker>>, TError,UpdateWorkerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateWorker>>,
+        TError,
+        UpdateWorkerMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateWorkerMutationOptions(options));
+    }
+
+export const getGetWorkerYearPaidUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/workers/${id}/year-paid`
+}
+
+export const getWorkerYearPaid = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<GetWorkerYearPaid200Item[]> => {
+
+  return customFetch<GetWorkerYearPaid200Item[]>(getGetWorkerYearPaidUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkerYearPaidQueryKey = (id: string,) => {
+    return [
+    `/api/v1/workers/${id}/year-paid`
+    ] as const;
+    }
+
+
+export const getGetWorkerYearPaidQueryOptions = <TData = Awaited<ReturnType<typeof getWorkerYearPaid>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkerYearPaid>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkerYearPaidQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkerYearPaid>>> = ({ signal }) => getWorkerYearPaid(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkerYearPaid>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkerYearPaidQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkerYearPaid>>>
+export type GetWorkerYearPaidQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useGetWorkerYearPaid<TData = Awaited<ReturnType<typeof getWorkerYearPaid>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkerYearPaid>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkerYearPaidQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAssignmentsUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/projects/${id}/assignments`
+}
+
+export const listAssignments = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Assignment[]> => {
+
+  return customFetch<Assignment[]>(getListAssignmentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssignmentsQueryKey = (id: string,) => {
+    return [
+    `/api/v1/projects/${id}/assignments`
+    ] as const;
+    }
+
+
+export const getListAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssignmentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssignments>>> = ({ signal }) => listAssignments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssignments>>>
+export type ListAssignmentsQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListAssignments<TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssignmentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAssignmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/projects/${id}/assignments`
+}
+
+export const createAssignment = async (id: string,
+    assignmentInput: AssignmentInput, options?: Parameters<typeof customFetch>[1]): Promise<Assignment> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Assignment>(getCreateAssignmentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(assignmentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAssignmentMutationKey = () => ['createAssignment'] as const;
+
+export const getCreateAssignmentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssignment>>, TError,CreateAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAssignment>>, TError,CreateAssignmentMutationVariables, TContext> => {
+
+const mutationKey = getCreateAssignmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAssignment>>, CreateAssignmentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAssignment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof createAssignment>>>
+    export type CreateAssignmentMutationBody = BodyType<AssignmentInput>
+    export type CreateAssignmentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type CreateAssignmentMutationVariables = {id: string;data: BodyType<AssignmentInput>}
+
+    export const useCreateAssignment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssignment>>, TError,CreateAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAssignment>>,
+        TError,
+        CreateAssignmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateAssignmentMutationOptions(options));
+    }
+
+export const getRemoveAssignmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/assignments/${id}`
+}
+
+export const removeAssignment = async (id: string,
+    operationInput: OperationInput, options?: Parameters<typeof customFetch>[1]): Promise<OkResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OkResult>(getRemoveAssignmentUrl(id),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(operationInput)
+  }
+);}
+
+
+
+
+
+export const getRemoveAssignmentMutationKey = () => ['removeAssignment'] as const;
+
+export const getRemoveAssignmentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAssignment>>, TError,RemoveAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeAssignment>>, TError,RemoveAssignmentMutationVariables, TContext> => {
+
+const mutationKey = getRemoveAssignmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeAssignment>>, RemoveAssignmentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  removeAssignment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof removeAssignment>>>
+    export type RemoveAssignmentMutationBody = BodyType<OperationInput>
+    export type RemoveAssignmentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type RemoveAssignmentMutationVariables = {id: string;data: BodyType<OperationInput>}
+
+    export const useRemoveAssignment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAssignment>>, TError,RemoveAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeAssignment>>,
+        TError,
+        RemoveAssignmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveAssignmentMutationOptions(options));
+    }
+
+export const getListRatesUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/assignments/${id}/rates`
+}
+
+export const listRates = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<RateAgreement[]> => {
+
+  return customFetch<RateAgreement[]>(getListRatesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRatesQueryKey = (id: string,) => {
+    return [
+    `/api/v1/assignments/${id}/rates`
+    ] as const;
+    }
+
+
+export const getListRatesQueryOptions = <TData = Awaited<ReturnType<typeof listRates>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRatesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRates>>> = ({ signal }) => listRates(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRatesQueryResult = NonNullable<Awaited<ReturnType<typeof listRates>>>
+export type ListRatesQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListRates<TData = Awaited<ReturnType<typeof listRates>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRatesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getApplyRateChangeUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/assignments/${id}/rates`
+}
+
+export const applyRateChange = async (id: string,
+    rateChangeInput: RateChangeInput, options?: Parameters<typeof customFetch>[1]): Promise<ApplyRateChange200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ApplyRateChange200>(getApplyRateChangeUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rateChangeInput)
+  }
+);}
+
+
+
+
+
+export const getApplyRateChangeMutationKey = () => ['applyRateChange'] as const;
+
+export const getApplyRateChangeMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyRateChange>>, TError,ApplyRateChangeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyRateChange>>, TError,ApplyRateChangeMutationVariables, TContext> => {
+
+const mutationKey = getApplyRateChangeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyRateChange>>, ApplyRateChangeMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  applyRateChange(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyRateChangeMutationResult = NonNullable<Awaited<ReturnType<typeof applyRateChange>>>
+    export type ApplyRateChangeMutationBody = BodyType<RateChangeInput>
+    export type ApplyRateChangeMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type ApplyRateChangeMutationVariables = {id: string;data: BodyType<RateChangeInput>}
+
+    export const useApplyRateChange = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyRateChange>>, TError,ApplyRateChangeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyRateChange>>,
+        TError,
+        ApplyRateChangeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApplyRateChangeMutationOptions(options));
+    }
+
+export const getPreviewRateChangeUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/assignments/${id}/rates/preview`
+}
+
+export const previewRateChange = async (id: string,
+    ratePreviewInput: RatePreviewInput, options?: Parameters<typeof customFetch>[1]): Promise<PreviewRateChange200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PreviewRateChange200>(getPreviewRateChangeUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(ratePreviewInput)
+  }
+);}
+
+
+
+
+
+export const getPreviewRateChangeMutationKey = () => ['previewRateChange'] as const;
+
+export const getPreviewRateChangeMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewRateChange>>, TError,PreviewRateChangeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewRateChange>>, TError,PreviewRateChangeMutationVariables, TContext> => {
+
+const mutationKey = getPreviewRateChangeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewRateChange>>, PreviewRateChangeMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  previewRateChange(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewRateChangeMutationResult = NonNullable<Awaited<ReturnType<typeof previewRateChange>>>
+    export type PreviewRateChangeMutationBody = BodyType<RatePreviewInput>
+    export type PreviewRateChangeMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type PreviewRateChangeMutationVariables = {id: string;data: BodyType<RatePreviewInput>}
+
+    export const usePreviewRateChange = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewRateChange>>, TError,PreviewRateChangeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewRateChange>>,
+        TError,
+        PreviewRateChangeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPreviewRateChangeMutationOptions(options));
+    }
+
+export const getListWorkEntriesUrl = (params: ListWorkEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/work-entries?${stringifiedParams}` : `/api/v1/work-entries`
+}
+
+export const listWorkEntries = async (params: ListWorkEntriesParams, options?: Parameters<typeof customFetch>[1]): Promise<WorkEntry[]> => {
+
+  return customFetch<WorkEntry[]>(getListWorkEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListWorkEntriesQueryKey = (params?: ListWorkEntriesParams,) => {
+    return [
+    `/api/v1/work-entries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListWorkEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listWorkEntries>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(params: ListWorkEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWorkEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListWorkEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listWorkEntries>>> = ({ signal }) => listWorkEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listWorkEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListWorkEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listWorkEntries>>>
+export type ListWorkEntriesQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListWorkEntries<TData = Awaited<ReturnType<typeof listWorkEntries>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ params: ListWorkEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWorkEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListWorkEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordWorkUrl = () => {
+
+
+
+
+  return `/api/v1/work-entries`
+}
+
+export const recordWork = async (workInput: WorkInput, options?: Parameters<typeof customFetch>[1]): Promise<RecordWork200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RecordWork200>(getRecordWorkUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(workInput)
+  }
+);}
+
+
+
+
+
+export const getRecordWorkMutationKey = () => ['recordWork'] as const;
+
+export const getRecordWorkMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordWork>>, TError,RecordWorkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordWork>>, TError,RecordWorkMutationVariables, TContext> => {
+
+const mutationKey = getRecordWorkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordWork>>, RecordWorkMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordWork(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordWorkMutationResult = NonNullable<Awaited<ReturnType<typeof recordWork>>>
+    export type RecordWorkMutationBody = BodyType<WorkInput>
+    export type RecordWorkMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type RecordWorkMutationVariables = {data: BodyType<WorkInput>}
+
+    export const useRecordWork = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordWork>>, TError,RecordWorkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordWork>>,
+        TError,
+        RecordWorkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordWorkMutationOptions(options));
+    }
+
+export const getMarkRestNoWorkUrl = () => {
+
+
+
+
+  return `/api/v1/work-entries/no-work`
+}
+
+export const markRestNoWork = async (noWorkInput: NoWorkInput, options?: Parameters<typeof customFetch>[1]): Promise<MarkRestNoWork200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MarkRestNoWork200>(getMarkRestNoWorkUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(noWorkInput)
+  }
+);}
+
+
+
+
+
+export const getMarkRestNoWorkMutationKey = () => ['markRestNoWork'] as const;
+
+export const getMarkRestNoWorkMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markRestNoWork>>, TError,MarkRestNoWorkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markRestNoWork>>, TError,MarkRestNoWorkMutationVariables, TContext> => {
+
+const mutationKey = getMarkRestNoWorkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markRestNoWork>>, MarkRestNoWorkMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  markRestNoWork(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkRestNoWorkMutationResult = NonNullable<Awaited<ReturnType<typeof markRestNoWork>>>
+    export type MarkRestNoWorkMutationBody = BodyType<NoWorkInput>
+    export type MarkRestNoWorkMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type MarkRestNoWorkMutationVariables = {data: BodyType<NoWorkInput>}
+
+    export const useMarkRestNoWork = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markRestNoWork>>, TError,MarkRestNoWorkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markRestNoWork>>,
+        TError,
+        MarkRestNoWorkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarkRestNoWorkMutationOptions(options));
+    }
+
+export const getListPaymentsUrl = (params?: ListPaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/payments?${stringifiedParams}` : `/api/v1/payments`
+}
+
+export const listPayments = async (params?: ListPaymentsParams, options?: Parameters<typeof customFetch>[1]): Promise<Payment[]> => {
+
+  return customFetch<Payment[]>(getListPaymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPaymentsQueryKey = (params?: ListPaymentsParams,) => {
+    return [
+    `/api/v1/payments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof listPayments>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(params?: ListPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPaymentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPayments>>> = ({ signal }) => listPayments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>
+export type ListPaymentsQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListPayments<TData = Awaited<ReturnType<typeof listPayments>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ params?: ListPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPaymentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordPaymentUrl = () => {
+
+
+
+
+  return `/api/v1/payments`
+}
+
+export const recordPayment = async (paymentInput: PaymentInput, options?: Parameters<typeof customFetch>[1]): Promise<PaymentResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PaymentResult>(getRecordPaymentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(paymentInput)
+  }
+);}
+
+
+
+
+
+export const getRecordPaymentMutationKey = () => ['recordPayment'] as const;
+
+export const getRecordPaymentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordPayment>>, TError,RecordPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordPayment>>, TError,RecordPaymentMutationVariables, TContext> => {
+
+const mutationKey = getRecordPaymentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordPayment>>, RecordPaymentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordPayment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof recordPayment>>>
+    export type RecordPaymentMutationBody = BodyType<PaymentInput>
+    export type RecordPaymentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type RecordPaymentMutationVariables = {data: BodyType<PaymentInput>}
+
+    export const useRecordPayment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordPayment>>, TError,RecordPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordPayment>>,
+        TError,
+        RecordPaymentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordPaymentMutationOptions(options));
+    }
+
+export const getReversePaymentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/payments/${id}/reverse`
+}
+
+export const reversePayment = async (id: string,
+    reversalInput: ReversalInput, options?: Parameters<typeof customFetch>[1]): Promise<ReversalResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReversalResult>(getReversePaymentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reversalInput)
+  }
+);}
+
+
+
+
+
+export const getReversePaymentMutationKey = () => ['reversePayment'] as const;
+
+export const getReversePaymentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reversePayment>>, TError,ReversePaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reversePayment>>, TError,ReversePaymentMutationVariables, TContext> => {
+
+const mutationKey = getReversePaymentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reversePayment>>, ReversePaymentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reversePayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReversePaymentMutationResult = NonNullable<Awaited<ReturnType<typeof reversePayment>>>
+    export type ReversePaymentMutationBody = BodyType<ReversalInput>
+    export type ReversePaymentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type ReversePaymentMutationVariables = {id: string;data: BodyType<ReversalInput>}
+
+    export const useReversePayment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reversePayment>>, TError,ReversePaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reversePayment>>,
+        TError,
+        ReversePaymentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReversePaymentMutationOptions(options));
+    }
+
+export const getClearPaymentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/payments/${id}/clearance`
+}
+
+export const clearPayment = async (id: string,
+    clearanceInput: ClearanceInput, options?: Parameters<typeof customFetch>[1]): Promise<ClearPayment200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ClearPayment200>(getClearPaymentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(clearanceInput)
+  }
+);}
+
+
+
+
+
+export const getClearPaymentMutationKey = () => ['clearPayment'] as const;
+
+export const getClearPaymentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearPayment>>, TError,ClearPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearPayment>>, TError,ClearPaymentMutationVariables, TContext> => {
+
+const mutationKey = getClearPaymentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearPayment>>, ClearPaymentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  clearPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof clearPayment>>>
+    export type ClearPaymentMutationBody = BodyType<ClearanceInput>
+    export type ClearPaymentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type ClearPaymentMutationVariables = {id: string;data: BodyType<ClearanceInput>}
+
+    export const useClearPayment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearPayment>>, TError,ClearPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearPayment>>,
+        TError,
+        ClearPaymentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClearPaymentMutationOptions(options));
+    }
+
+export const getCorrectPaymentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/payments/${id}/correct`
+}
+
+export const correctPayment = async (id: string,
+    paymentCorrectionInput: PaymentCorrectionInput, options?: Parameters<typeof customFetch>[1]): Promise<CorrectPayment200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CorrectPayment200>(getCorrectPaymentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(paymentCorrectionInput)
+  }
+);}
+
+
+
+
+
+export const getCorrectPaymentMutationKey = () => ['correctPayment'] as const;
+
+export const getCorrectPaymentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof correctPayment>>, TError,CorrectPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof correctPayment>>, TError,CorrectPaymentMutationVariables, TContext> => {
+
+const mutationKey = getCorrectPaymentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof correctPayment>>, CorrectPaymentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  correctPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CorrectPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof correctPayment>>>
+    export type CorrectPaymentMutationBody = BodyType<PaymentCorrectionInput>
+    export type CorrectPaymentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type CorrectPaymentMutationVariables = {id: string;data: BodyType<PaymentCorrectionInput>}
+
+    export const useCorrectPayment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof correctPayment>>, TError,CorrectPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof correctPayment>>,
+        TError,
+        CorrectPaymentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCorrectPaymentMutationOptions(options));
+    }
+
+export const getListBalancesUrl = (params?: ListBalancesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/balances?${stringifiedParams}` : `/api/v1/balances`
+}
+
+export const listBalances = async (params?: ListBalancesParams, options?: Parameters<typeof customFetch>[1]): Promise<ListBalances200Item[]> => {
+
+  return customFetch<ListBalances200Item[]>(getListBalancesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBalancesQueryKey = (params?: ListBalancesParams,) => {
+    return [
+    `/api/v1/balances`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListBalancesQueryOptions = <TData = Awaited<ReturnType<typeof listBalances>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(params?: ListBalancesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBalances>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBalancesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBalances>>> = ({ signal }) => listBalances(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBalances>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBalancesQueryResult = NonNullable<Awaited<ReturnType<typeof listBalances>>>
+export type ListBalancesQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListBalances<TData = Awaited<ReturnType<typeof listBalances>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ params?: ListBalancesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBalances>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBalancesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListHistoryUrl = (params?: ListHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/history?${stringifiedParams}` : `/api/v1/history`
+}
+
+export const listHistory = async (params?: ListHistoryParams, options?: Parameters<typeof customFetch>[1]): Promise<ListHistory200Item[]> => {
+
+  return customFetch<ListHistory200Item[]>(getListHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListHistoryQueryKey = (params?: ListHistoryParams,) => {
+    return [
+    `/api/v1/history`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListHistoryQueryOptions = <TData = Awaited<ReturnType<typeof listHistory>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(params?: ListHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listHistory>>> = ({ signal }) => listHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof listHistory>>>
+export type ListHistoryQueryError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+
+
+
+export function useListHistory<TData = Awaited<ReturnType<typeof listHistory>>, TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>>(
+ params?: ListHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordReimbursementUrl = () => {
+
+
+
+
+  return `/api/v1/reimbursements`
+}
+
+export const recordReimbursement = async (reimbursementInput: ReimbursementInput, options?: Parameters<typeof customFetch>[1]): Promise<RecordReimbursement200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RecordReimbursement200>(getRecordReimbursementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reimbursementInput)
+  }
+);}
+
+
+
+
+
+export const getRecordReimbursementMutationKey = () => ['recordReimbursement'] as const;
+
+export const getRecordReimbursementMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordReimbursement>>, TError,RecordReimbursementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordReimbursement>>, TError,RecordReimbursementMutationVariables, TContext> => {
+
+const mutationKey = getRecordReimbursementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordReimbursement>>, RecordReimbursementMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordReimbursement(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordReimbursementMutationResult = NonNullable<Awaited<ReturnType<typeof recordReimbursement>>>
+    export type RecordReimbursementMutationBody = BodyType<ReimbursementInput>
+    export type RecordReimbursementMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type RecordReimbursementMutationVariables = {data: BodyType<ReimbursementInput>}
+
+    export const useRecordReimbursement = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordReimbursement>>, TError,RecordReimbursementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordReimbursement>>,
+        TError,
+        RecordReimbursementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordReimbursementMutationOptions(options));
+    }
+
+export const getRecordAdjustmentUrl = () => {
+
+
+
+
+  return `/api/v1/adjustments`
+}
+
+export const recordAdjustment = async (adjustmentInput: AdjustmentInput, options?: Parameters<typeof customFetch>[1]): Promise<RecordAdjustment200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RecordAdjustment200>(getRecordAdjustmentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adjustmentInput)
+  }
+);}
+
+
+
+
+
+export const getRecordAdjustmentMutationKey = () => ['recordAdjustment'] as const;
+
+export const getRecordAdjustmentMutationOptions = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdjustment>>, TError,RecordAdjustmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAdjustment>>, TError,RecordAdjustmentMutationVariables, TContext> => {
+
+const mutationKey = getRecordAdjustmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAdjustment>>, RecordAdjustmentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordAdjustment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordAdjustmentMutationResult = NonNullable<Awaited<ReturnType<typeof recordAdjustment>>>
+    export type RecordAdjustmentMutationBody = BodyType<AdjustmentInput>
+    export type RecordAdjustmentMutationError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>
+    export type RecordAdjustmentMutationVariables = {data: BodyType<AdjustmentInput>}
+
+    export const useRecordAdjustment = <TError = ErrorType<DomainConflictResponse | DomainInvalidResponse | DomainErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdjustment>>, TError,RecordAdjustmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordAdjustment>>,
+        TError,
+        RecordAdjustmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordAdjustmentMutationOptions(options));
     }
 

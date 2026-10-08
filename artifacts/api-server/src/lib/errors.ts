@@ -21,6 +21,9 @@ const states: Record<string, { status: number; code: string; message: string }> 
 };
 
 export function mapError(error: unknown) {
+  if (error instanceof Error && "code" in error && error.code === "DOMAIN_RULE") {
+    return { status: 422, code: "INVALID", message: error.message };
+  }
   if (error instanceof ZodError) return { status: 400, code: "INVALID", message: "Invalid input" };
   const type = error && typeof error === "object" && "type" in error ? error.type : null;
   if (type === "entity.too.large") return { status: 413, code: "PAYLOAD_TOO_LARGE", message: "Request body is too large" };

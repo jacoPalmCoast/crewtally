@@ -12,6 +12,15 @@ import { createMeRouter } from "./me";
 import { createWorkspaceRouter } from "./workspaces";
 import { createMembersRouter } from "./members";
 import { createInvitationRouter } from "./invitations";
+import { createProjectsRouter } from "./projects";
+import { createWorkersRouter } from "./workers";
+import { createAssignmentsRouter } from "./assignments";
+import { createRatesRouter } from "./rates";
+import { createWorkRouter } from "./work";
+import { createPaymentsRouter } from "./payments";
+import { createLedgerRouter } from "./ledger";
+import { createReimbursementsRouter } from "./reimbursements";
+import { createAdjustmentsRouter } from "./adjustments";
 
 export interface RouterLogger {
   info: (fields: Record<string, unknown>, message?: string) => void;
@@ -54,6 +63,15 @@ export function createRouter(options: RouterOptions = {}): IRouter {
   router.use(createWorkspaceRouter(db, env));
   router.use(createMembersRouter(db));
   router.use(createInvitationRouter(db, env));
+  router.use(createProjectsRouter(db));
+  router.use(createWorkersRouter(db));
+  router.use(createAssignmentsRouter(db));
+  router.use(createRatesRouter(db));
+  router.use(createWorkRouter(db));
+  router.use(createPaymentsRouter(db));
+  router.use(createLedgerRouter(db));
+  router.use(createReimbursementsRouter(db));
+  router.use(createAdjustmentsRouter(db));
   if (options.testOnlyProtectedRouter) router.use(requireSession(db), options.testOnlyProtectedRouter);
   return router;
 }

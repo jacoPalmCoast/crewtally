@@ -44,6 +44,25 @@ function stackRoutes(router: { stack: unknown[] }): { path: string; method: stri
   return result;
 }
 
+const domainRoutes = [
+  ["get", "/projects", "workspace.read"], ["post", "/projects", "projects.manage"],
+  ["get", "/projects/:id", "workspace.read"], ["patch", "/projects/:id", "projects.manage"],
+  ["get", "/workers", "workspace.read"], ["post", "/workers", "people.add"],
+  ["get", "/workers/:id", "workspace.read"], ["patch", "/workers/:id", "people.add"],
+  ["get", "/workers/:id/year-paid", "money.view"],
+  ["post", "/projects/:id/assignments", "people.add"], ["get", "/projects/:id/assignments", "workspace.read"],
+  ["delete", "/assignments/:id", "people.remove"],
+  ["get", "/assignments/:id/rates", "workspace.read"], ["post", "/assignments/:id/rates/preview", "rates.set"],
+  ["post", "/assignments/:id/rates", "rates.set"],
+  ["post", "/work-entries", "work.record"], ["post", "/work-entries/no-work", "work.record"],
+  ["get", "/work-entries", "workspace.read"],
+  ["post", "/payments", "money.record"], ["get", "/payments", "money.view"],
+  ["post", "/payments/:id/reverse", "money.record"], ["patch", "/payments/:id/clearance", "money.record"],
+  ["post", "/payments/:id/correct", "money.record"],
+  ["get", "/balances", "money.view"], ["get", "/history", "money.view"],
+  ["post", "/reimbursements", "money.record"], ["post", "/adjustments", "money.record"],
+] as const;
+
 describe("route table", () => {
   it("covers every Express /v1 route exactly once and declares all member actions", () => {
     const router = createRouter({ db, env: { ...env, DEV_SIGNIN_CODE: "fixture" }, logger });
@@ -54,7 +73,12 @@ describe("route table", () => {
       expect(["public", "session", "member"]).toContain(route.kind);
       if (route.kind === "member") expect(route.action).toMatch(/^[a-z_]+\.[a-z_]+$/);
     }
-    expect(table.filter(r => r.kind === "member")).toHaveLength(8);
+    expect(table.filter(r => r.kind === "member")).toHaveLength(8 + domainRoutes.length);
+    for (const [method, path, action] of domainRoutes) {
+      expect(table.filter(route => route.method === method && route.path === path)).toEqual([
+        { method, path, action, kind: "member" },
+      ]);
+    }
   });
 });
 
@@ -91,9 +115,13 @@ describe("fresh-fixture role matrix: declared route gate only", () => {
       try {
         const url = `/v1${route.path.replace(/:userId|:id/g, randomUUID())}`;
         const result = await agent[route.method](url).send({});
-        const allowed = route.action === "workspace.read" ||
-          (route.action === "settings.edit" ? ["ORGANIZER","OWNER"].includes(role) :
-            ["ORGANIZER","OWNER","ADMIN_MONEY","ADMIN_NO_MONEY"].includes(role));
+        const money = ["ORGANIZER", "PARTNER", "OWNER", "ADMIN_MONEY"].includes(role);
+        const allowed = ["workspace.read", "work.record"].includes(route.action!) ||
+          (["money.view", "money.record"].includes(route.action!) ? money :
+            route.action === "rates.set" ? ["ORGANIZER", "OWNER", "ADMIN_MONEY"].includes(role) :
+            route.action === "settings.edit" ? ["ORGANIZER", "OWNER"].includes(role) :
+            ["people.add", "projects.manage"].includes(route.action!) ? ["ORGANIZER", "PARTNER", "OWNER", "ADMIN_MONEY", "ADMIN_NO_MONEY"].includes(role) :
+            ["ORGANIZER", "OWNER", "ADMIN_MONEY", "ADMIN_NO_MONEY"].includes(role));
         expect(result.status).toBe(["REMOVED","OUTSIDER"].includes(role) ? 404 : allowed ? 200 : 403);
         if (result.status === 200) expect(result.body.gate_passed).toBe(true);
       } finally { spy.mockRestore(); }

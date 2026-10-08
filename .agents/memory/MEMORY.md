@@ -2,3 +2,4 @@
 - [Query cache test lifecycle](query-cache-test-lifecycle.md) — Jest can print PASS while query-cache GC timers keep it alive; test fixtures must clear their clients.
 - [Expo restart readiness](expo-restart-readiness.md) — session login and workflow “running” do not prove Metro restarted; confirm a new QR and watch for stale child processes.
 - [Credential idempotency hashing](credential-idempotency-hashing.md) — plaintext absence is insufficient: low-entropy codes must be peppered before request hashing.
+- [Orval contract pitfalls](orval-contract-pitfalls.md) — YAML merge keys are not expanded; nested object strictness needs generator configuration.

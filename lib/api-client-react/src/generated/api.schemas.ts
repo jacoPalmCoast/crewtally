@@ -5,6 +5,652 @@
  * CrewTally API
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * Valid calendar date in YYYY-MM-DD format
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+export type DomainDate = string;
+
+/**
+ * Integer cents, never a floating-point money amount
+ * @minimum 1
+ * @maximum 10000000
+ */
+export type DomainAmount = number;
+
+export interface ProjectInput {
+  operation_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  timezone: string;
+  /**
+     * @minItems 1
+     * @maxItems 7
+     * @items.minimum 1
+     * @items.maximum 7
+     */
+  work_days?: number[];
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  address?: string | null;
+}
+
+export type ProjectUpdateInputStatus = typeof ProjectUpdateInputStatus[keyof typeof ProjectUpdateInputStatus];
+
+
+export const ProjectUpdateInputStatus = {
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export interface ProjectUpdateInput {
+  operation_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name?: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  address?: string | null;
+  /**
+     * @minItems 1
+     * @maxItems 7
+     * @items.minimum 1
+     * @items.maximum 7
+     */
+  work_days?: number[];
+  status?: ProjectUpdateInputStatus;
+}
+
+export type ProjectStatus = typeof ProjectStatus[keyof typeof ProjectStatus];
+
+
+export const ProjectStatus = {
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export interface Project {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  address: string | null;
+  timezone: string;
+  /**
+     * @minItems 1
+     * @maxItems 7
+     * @items.minimum 1
+     * @items.maximum 7
+     */
+  work_days: number[];
+  status: ProjectStatus;
+  version: number;
+}
+
+export type WorkerInputDocumentLanguage = typeof WorkerInputDocumentLanguage[keyof typeof WorkerInputDocumentLanguage];
+
+
+export const WorkerInputDocumentLanguage = {
+  en: 'en',
+  es: 'es',
+} as const;
+
+export interface WorkerInput {
+  operation_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  display_name: string;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  phone?: string | null;
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email?: string | null;
+  document_language?: WorkerInputDocumentLanguage;
+}
+
+export type WorkerUpdateInputDocumentLanguage = typeof WorkerUpdateInputDocumentLanguage[keyof typeof WorkerUpdateInputDocumentLanguage];
+
+
+export const WorkerUpdateInputDocumentLanguage = {
+  en: 'en',
+  es: 'es',
+} as const;
+
+export type WorkerUpdateInputStatus = typeof WorkerUpdateInputStatus[keyof typeof WorkerUpdateInputStatus];
+
+
+export const WorkerUpdateInputStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+} as const;
+
+export interface WorkerUpdateInput {
+  operation_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  display_name?: string;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  phone?: string | null;
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email?: string | null;
+  document_language?: WorkerUpdateInputDocumentLanguage;
+  status?: WorkerUpdateInputStatus;
+}
+
+export type WorkerDocumentLanguage = typeof WorkerDocumentLanguage[keyof typeof WorkerDocumentLanguage];
+
+
+export const WorkerDocumentLanguage = {
+  en: 'en',
+  es: 'es',
+} as const;
+
+export type WorkerStatus = typeof WorkerStatus[keyof typeof WorkerStatus];
+
+
+export const WorkerStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+} as const;
+
+export interface Worker {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  display_name: string;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  phone: string | null;
+  /**
+     * @maxLength 254
+     * @nullable
+     */
+  email: string | null;
+  document_language: WorkerDocumentLanguage;
+  status: WorkerStatus;
+  version: number;
+}
+
+export interface AssignmentInput {
+  operation_id: string;
+  worker_id: string;
+  start_date: DomainDate;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  end_date?: string | null;
+}
+
+export interface Assignment {
+  id: string;
+  project_id: string;
+  worker_id: string;
+  start_date: string;
+  /** @nullable */
+  end_date: string | null;
+  version: number;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  display_name?: string;
+}
+
+export type RatePreviewInputPayBasis = typeof RatePreviewInputPayBasis[keyof typeof RatePreviewInputPayBasis];
+
+
+export const RatePreviewInputPayBasis = {
+  DAY: 'DAY',
+  HOUR: 'HOUR',
+} as const;
+
+export interface RatePreviewInput {
+  effective_from: DomainDate;
+  pay_basis: RatePreviewInputPayBasis;
+  /**
+     * @minimum 1
+     * @maximum 500000
+     */
+  rate_minor: number;
+  /**
+     * @minimum 60
+     * @maximum 1440
+     * @nullable
+     */
+  standard_day_minutes?: number | null;
+}
+
+export type RateChangeInputPayBasis = typeof RateChangeInputPayBasis[keyof typeof RateChangeInputPayBasis];
+
+
+export const RateChangeInputPayBasis = {
+  DAY: 'DAY',
+  HOUR: 'HOUR',
+} as const;
+
+export interface RateChangeInput {
+  effective_from: DomainDate;
+  pay_basis: RateChangeInputPayBasis;
+  /**
+     * @minimum 1
+     * @maximum 500000
+     */
+  rate_minor: number;
+  /**
+     * @minimum 60
+     * @maximum 1440
+     * @nullable
+     */
+  standard_day_minutes?: number | null;
+  operation_id: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reason?: string | null;
+  confirm?: boolean;
+}
+
+export type RateAgreementPayBasis = typeof RateAgreementPayBasis[keyof typeof RateAgreementPayBasis];
+
+
+export const RateAgreementPayBasis = {
+  DAY: 'DAY',
+  HOUR: 'HOUR',
+} as const;
+
+export interface RateAgreement {
+  effective_from: DomainDate;
+  pay_basis: RateAgreementPayBasis;
+  /**
+     * @minimum 1
+     * @maximum 500000
+     */
+  rate_minor: number;
+  /**
+     * @minimum 60
+     * @maximum 1440
+     * @nullable
+     */
+  standard_day_minutes: number | null;
+  id: string;
+}
+
+export type WorkInputMode = typeof WorkInputMode[keyof typeof WorkInputMode];
+
+
+export const WorkInputMode = {
+  DAY_PORTION: 'DAY_PORTION',
+  DAY_MINUTES: 'DAY_MINUTES',
+  HOUR_MINUTES: 'HOUR_MINUTES',
+  NO_WORK: 'NO_WORK',
+  VOID: 'VOID',
+} as const;
+
+export interface WorkInput {
+  operation_id: string;
+  assignment_id: string;
+  date: DomainDate;
+  mode: WorkInputMode;
+  /**
+     * @nullable
+     * @pattern ^(1(?:\.0{1,4})?|0\.\d{1,4})$
+     */
+  portion?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 1440
+     * @nullable
+     */
+  minutes?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  expected_version: number;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reason?: string | null;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export type WorkEntryInputMode = typeof WorkEntryInputMode[keyof typeof WorkEntryInputMode];
+
+
+export const WorkEntryInputMode = {
+  DAY_PORTION: 'DAY_PORTION',
+  DAY_MINUTES: 'DAY_MINUTES',
+  HOUR_MINUTES: 'HOUR_MINUTES',
+  NO_WORK: 'NO_WORK',
+  VOID: 'VOID',
+} as const;
+
+export interface WorkEntry {
+  work_date: string;
+  version: number;
+  input_mode: WorkEntryInputMode;
+  /**
+     * @nullable
+     * @pattern ^(1(?:\.0{1,4})?|0\.\d{1,4})$
+     */
+  portion: string | null;
+  /**
+     * @minimum 1
+     * @maximum 1440
+     * @nullable
+     */
+  minutes: number | null;
+  earned_minor: number;
+}
+
+export interface NoWorkInput {
+  operation_id: string;
+  project_id: string;
+  date: DomainDate;
+}
+
+export interface AllocationInput {
+  assignment_id: string;
+  amount_minor: DomainAmount;
+}
+
+export type PaymentInputMethod = typeof PaymentInputMethod[keyof typeof PaymentInputMethod];
+
+
+export const PaymentInputMethod = {
+  CASH: 'CASH',
+  CHECK: 'CHECK',
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  ZELLE: 'ZELLE',
+  OTHER: 'OTHER',
+} as const;
+
+export interface PaymentInput {
+  date: DomainDate;
+  method: PaymentInputMethod;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  method_note?: string | null;
+  amount_minor: DomainAmount;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  recipient: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reference?: string | null;
+  /** @minItems 1 */
+  allocations: AllocationInput[];
+  operation_id: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export type PaymentCorrectionInputMethod = typeof PaymentCorrectionInputMethod[keyof typeof PaymentCorrectionInputMethod];
+
+
+export const PaymentCorrectionInputMethod = {
+  CASH: 'CASH',
+  CHECK: 'CHECK',
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  ZELLE: 'ZELLE',
+  OTHER: 'OTHER',
+} as const;
+
+export interface PaymentCorrectionInput {
+  date: DomainDate;
+  method: PaymentCorrectionInputMethod;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  method_note?: string | null;
+  amount_minor: DomainAmount;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  recipient: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reference?: string | null;
+  /** @minItems 1 */
+  allocations: AllocationInput[];
+  operation_id: string;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  expected_version: number;
+  effective_date: DomainDate;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+
+
+export const PaymentMethod = {
+  CASH: 'CASH',
+  CHECK: 'CHECK',
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  ZELLE: 'ZELLE',
+  OTHER: 'OTHER',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PaymentClearance = typeof PaymentClearance[keyof typeof PaymentClearance] | null;
+
+
+export const PaymentClearance = {
+  ISSUED: 'ISSUED',
+  CLEARED: 'CLEARED',
+  RETURNED: 'RETURNED',
+} as const;
+
+export type PaymentAllocationsItem = {
+  id: string;
+  assignment_id: string;
+  amount_minor: number;
+};
+
+export interface Payment {
+  id: string;
+  receipt_no: number;
+  payment_date: string;
+  method: PaymentMethod;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  method_note: string | null;
+  amount_minor: number;
+  recipient_label: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reference: string | null;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  note: string | null;
+  /** @nullable */
+  clearance: PaymentClearance;
+  /** @nullable */
+  replaces_payment_id: string | null;
+  version: number;
+  allocations: PaymentAllocationsItem[];
+}
+
+export interface PaymentResult {
+  payment_id: string;
+  receipt_no: number;
+  version: number;
+}
+
+export type ReversalInputKind = typeof ReversalInputKind[keyof typeof ReversalInputKind];
+
+
+export const ReversalInputKind = {
+  FULL: 'FULL',
+  PARTIAL: 'PARTIAL',
+  CHECK_RETURNED: 'CHECK_RETURNED',
+  CORRECTION: 'CORRECTION',
+} as const;
+
+export type ReversalInputLinesItem = {
+  allocation_id: string;
+  amount_minor: DomainAmount;
+};
+
+export interface ReversalInput {
+  operation_id: string;
+  kind: ReversalInputKind;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  expected_version: number;
+  effective_date: DomainDate;
+  /**
+     * @minItems 1
+     * @nullable
+     */
+  lines?: ReversalInputLinesItem[] | null;
+}
+
+export interface ReversalResult {
+  reversal_id: string;
+  payment_version: number;
+  reversed_minor: number;
+  unreversed_minor: number;
+}
+
+export interface ClearanceInput {
+  operation_id: string;
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     */
+  expected_version: number;
+}
+
+export interface ReimbursementInput {
+  operation_id: string;
+  assignment_id: string;
+  date: DomainDate;
+  /**
+     * @minimum 1
+     * @maximum 5000000
+     */
+  amount_minor: number;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  description: string;
+}
+
+export type AdjustmentInputDirection = typeof AdjustmentInputDirection[keyof typeof AdjustmentInputDirection];
+
+
+export const AdjustmentInputDirection = {
+  INCREASE_OWED: 'INCREASE_OWED',
+  DECREASE_OWED: 'DECREASE_OWED',
+} as const;
+
+export type AdjustmentInputCategory = typeof AdjustmentInputCategory[keyof typeof AdjustmentInputCategory];
+
+
+export const AdjustmentInputCategory = {
+  OPENING_BALANCE: 'OPENING_BALANCE',
+  BONUS: 'BONUS',
+  OVERTIME: 'OVERTIME',
+  DEDUCTION: 'DEDUCTION',
+  OTHER: 'OTHER',
+} as const;
+
+export interface AdjustmentInput {
+  operation_id: string;
+  assignment_id: string;
+  date: DomainDate;
+  direction: AdjustmentInputDirection;
+  category: AdjustmentInputCategory;
+  amount_minor: DomainAmount;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  reason: string;
+}
+
 export interface PublicConfig {
   business_enabled: boolean;
 }
@@ -315,6 +961,21 @@ export interface ErrorResponse {
 }
 
 /**
+ * Stale version, operation reused, duplicate record, or CONFIRMATION_REQUIRED (resubmit with confirm true)
+ */
+export type DomainConflictResponse = ErrorResponse;
+
+/**
+ * Domain business rule failed
+ */
+export type DomainInvalidResponse = ErrorResponse;
+
+/**
+ * Standard error envelope (400 validation, 401 session, 403 permission, 404 missing or foreign resource, 500 internal error)
+ */
+export type DomainErrorResponse = ErrorResponse;
+
+/**
  * Malformed or invalid input
  */
 export type BadRequestResponse = ErrorResponse;
@@ -340,4 +1001,119 @@ export type RateLimitedResponse = ErrorResponse;
 export type ServerErrorResponse = ErrorResponse;
 
 export type WorkspaceHeaderParameter = string;
+
+export type GetWorkerYearPaid200Item = {
+  year: number;
+  net_paid_minor: number;
+};
+
+export type ApplyRateChange200 = {
+  agreement_id: string;
+  corrected_days: number;
+  total_delta_minor: number;
+};
+
+export type PreviewRateChange200AffectedItem = {
+  work_date: string;
+  old_earned_minor: number;
+  new_earned_minor: number;
+  delta_minor: number;
+};
+
+export type PreviewRateChange200 = {
+  affected: PreviewRateChange200AffectedItem[];
+  total_delta_minor: number;
+  /** @nullable */
+  blocked_reason: string | null;
+};
+
+export type ListWorkEntriesParams = {
+assignment_id: string;
+from: DomainDate;
+to: DomainDate;
+};
+
+export type RecordWork200 = {
+  entry_id: string;
+  version: number;
+  revision: number;
+  earned_minor: number;
+  delta_minor: number;
+};
+
+export type MarkRestNoWork200 = {
+  marked: number;
+};
+
+export type ListPaymentsParams = {
+from?: DomainDate;
+to?: DomainDate;
+worker_id?: string;
+};
+
+export type ClearPayment200Clearance = typeof ClearPayment200Clearance[keyof typeof ClearPayment200Clearance];
+
+
+export const ClearPayment200Clearance = {
+  CLEARED: 'CLEARED',
+} as const;
+
+export type ClearPayment200 = {
+  payment_version: number;
+  clearance: ClearPayment200Clearance;
+};
+
+export type CorrectPayment200 = {
+  replaced_payment_id: string;
+  reversal: ReversalResult;
+  payment: PaymentResult;
+};
+
+export type ListBalancesParams = {
+project_id?: string;
+worker_id?: string;
+};
+
+export type ListBalances200Item = {
+  assignment_id: string;
+  project_id: string;
+  worker_id: string;
+  balance_minor: number;
+};
+
+export type ListHistoryParams = {
+project_id?: string;
+worker_id?: string;
+from?: DomainDate;
+to?: DomainDate;
+};
+
+export type ListHistory200ItemEventType = typeof ListHistory200ItemEventType[keyof typeof ListHistory200ItemEventType];
+
+
+export const ListHistory200ItemEventType = {
+  EARNING: 'EARNING',
+  EARNING_CORRECTION: 'EARNING_CORRECTION',
+  REIMBURSEMENT: 'REIMBURSEMENT',
+  ADJUSTMENT: 'ADJUSTMENT',
+  PAYMENT: 'PAYMENT',
+  PAYMENT_REVERSAL: 'PAYMENT_REVERSAL',
+} as const;
+
+export type ListHistory200Item = {
+  effective_date: string;
+  event_type: ListHistory200ItemEventType;
+  signed_delta: number;
+  source_type: string;
+  source_id: string;
+  seq: number;
+};
+
+export type RecordReimbursement200 = {
+  reimbursement_id: string;
+};
+
+export type RecordAdjustment200 = {
+  adjustment_id: string;
+};
 

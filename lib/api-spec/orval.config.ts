@@ -70,6 +70,13 @@ export default defineConfig({
         },
         useDates: true,
         useBigInt: true,
+        // Strictness must include nested allocation/reversal objects, not just
+        // the handler's top-level .strict(). Keep existing contracts unchanged.
+        operations: {
+          recordPayment: { zod: { strict: { body: true } } },
+          reversePayment: { zod: { strict: { body: true } } },
+          correctPayment: { zod: { strict: { body: true } } },
+        },
       },
     },
   },

@@ -365,3 +365,860 @@ export const DeclineInvitationResponse = zod.object({
 })
 
 
+export const ListProjectsHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const listProjectsResponseNameMax = 80;
+
+export const listProjectsResponseAddressMax = 500;
+
+export const listProjectsResponseWorkDaysItemMax = 7;
+
+export const listProjectsResponseWorkDaysMax = 7;
+
+
+
+export const ListProjectsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string().min(1).max(listProjectsResponseNameMax),
+  "address": zod.string().max(listProjectsResponseAddressMax).nullable(),
+  "timezone": zod.string(),
+  "work_days": zod.array(zod.number().int().min(1).max(listProjectsResponseWorkDaysItemMax)).min(1).max(listProjectsResponseWorkDaysMax),
+  "status": zod.enum(['ACTIVE', 'ARCHIVED']),
+  "version": zod.number().int()
+})
+export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
+
+
+export const CreateProjectHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const createProjectBodyNameMax = 80;
+
+export const createProjectBodyTimezoneMax = 100;
+
+export const createProjectBodyWorkDaysItemMax = 7;
+
+export const createProjectBodyWorkDaysMax = 7;
+
+export const createProjectBodyAddressMax = 500;
+
+
+
+export const CreateProjectBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "name": zod.string().min(1).max(createProjectBodyNameMax),
+  "timezone": zod.string().min(1).max(createProjectBodyTimezoneMax),
+  "work_days": zod.array(zod.number().int().min(1).max(createProjectBodyWorkDaysItemMax)).min(1).max(createProjectBodyWorkDaysMax).optional(),
+  "address": zod.string().max(createProjectBodyAddressMax).nullish()
+})
+
+export const createProjectResponseNameMax = 80;
+
+export const createProjectResponseAddressMax = 500;
+
+export const createProjectResponseWorkDaysItemMax = 7;
+
+export const createProjectResponseWorkDaysMax = 7;
+
+
+
+export const CreateProjectResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string().min(1).max(createProjectResponseNameMax),
+  "address": zod.string().max(createProjectResponseAddressMax).nullable(),
+  "timezone": zod.string(),
+  "work_days": zod.array(zod.number().int().min(1).max(createProjectResponseWorkDaysItemMax)).min(1).max(createProjectResponseWorkDaysMax),
+  "status": zod.enum(['ACTIVE', 'ARCHIVED']),
+  "version": zod.number().int()
+})
+
+
+export const GetProjectParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetProjectHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const getProjectResponseNameMax = 80;
+
+export const getProjectResponseAddressMax = 500;
+
+export const getProjectResponseWorkDaysItemMax = 7;
+
+export const getProjectResponseWorkDaysMax = 7;
+
+
+
+export const GetProjectResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string().min(1).max(getProjectResponseNameMax),
+  "address": zod.string().max(getProjectResponseAddressMax).nullable(),
+  "timezone": zod.string(),
+  "work_days": zod.array(zod.number().int().min(1).max(getProjectResponseWorkDaysItemMax)).min(1).max(getProjectResponseWorkDaysMax),
+  "status": zod.enum(['ACTIVE', 'ARCHIVED']),
+  "version": zod.number().int()
+})
+
+
+export const UpdateProjectParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const UpdateProjectHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const updateProjectBodyNameMax = 80;
+
+export const updateProjectBodyAddressMax = 500;
+
+export const updateProjectBodyWorkDaysItemMax = 7;
+
+export const updateProjectBodyWorkDaysMax = 7;
+
+
+
+export const UpdateProjectBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "name": zod.string().min(1).max(updateProjectBodyNameMax).optional(),
+  "address": zod.string().max(updateProjectBodyAddressMax).nullish(),
+  "work_days": zod.array(zod.number().int().min(1).max(updateProjectBodyWorkDaysItemMax)).min(1).max(updateProjectBodyWorkDaysMax).optional(),
+  "status": zod.enum(['ACTIVE', 'ARCHIVED']).optional()
+})
+
+export const updateProjectResponseNameMax = 80;
+
+export const updateProjectResponseAddressMax = 500;
+
+export const updateProjectResponseWorkDaysItemMax = 7;
+
+export const updateProjectResponseWorkDaysMax = 7;
+
+
+
+export const UpdateProjectResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string().min(1).max(updateProjectResponseNameMax),
+  "address": zod.string().max(updateProjectResponseAddressMax).nullable(),
+  "timezone": zod.string(),
+  "work_days": zod.array(zod.number().int().min(1).max(updateProjectResponseWorkDaysItemMax)).min(1).max(updateProjectResponseWorkDaysMax),
+  "status": zod.enum(['ACTIVE', 'ARCHIVED']),
+  "version": zod.number().int()
+})
+
+
+export const ListWorkersHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const listWorkersResponseDisplayNameMax = 60;
+
+export const listWorkersResponsePhoneMax = 60;
+
+export const listWorkersResponseEmailMax = 254;
+
+
+
+export const ListWorkersResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "display_name": zod.string().min(1).max(listWorkersResponseDisplayNameMax),
+  "phone": zod.string().max(listWorkersResponsePhoneMax).nullable(),
+  "email": zod.string().email().max(listWorkersResponseEmailMax).nullable(),
+  "document_language": zod.enum(['en', 'es']),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "version": zod.number().int()
+})
+export const ListWorkersResponse = zod.array(ListWorkersResponseItem)
+
+
+export const CreateWorkerHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const createWorkerBodyDisplayNameMax = 60;
+
+export const createWorkerBodyPhoneMax = 60;
+
+export const createWorkerBodyEmailMax = 254;
+
+
+
+export const CreateWorkerBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "display_name": zod.string().min(1).max(createWorkerBodyDisplayNameMax),
+  "phone": zod.string().max(createWorkerBodyPhoneMax).nullish(),
+  "email": zod.string().email().max(createWorkerBodyEmailMax).nullish(),
+  "document_language": zod.enum(['en', 'es']).optional()
+})
+
+export const createWorkerResponseDisplayNameMax = 60;
+
+export const createWorkerResponsePhoneMax = 60;
+
+export const createWorkerResponseEmailMax = 254;
+
+
+
+export const CreateWorkerResponse = zod.object({
+  "id": zod.string().uuid(),
+  "display_name": zod.string().min(1).max(createWorkerResponseDisplayNameMax),
+  "phone": zod.string().max(createWorkerResponsePhoneMax).nullable(),
+  "email": zod.string().email().max(createWorkerResponseEmailMax).nullable(),
+  "document_language": zod.enum(['en', 'es']),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "version": zod.number().int()
+})
+
+
+export const GetWorkerParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetWorkerHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const getWorkerResponseDisplayNameMax = 60;
+
+export const getWorkerResponsePhoneMax = 60;
+
+export const getWorkerResponseEmailMax = 254;
+
+
+
+export const GetWorkerResponse = zod.object({
+  "id": zod.string().uuid(),
+  "display_name": zod.string().min(1).max(getWorkerResponseDisplayNameMax),
+  "phone": zod.string().max(getWorkerResponsePhoneMax).nullable(),
+  "email": zod.string().email().max(getWorkerResponseEmailMax).nullable(),
+  "document_language": zod.enum(['en', 'es']),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "version": zod.number().int()
+})
+
+
+export const UpdateWorkerParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const UpdateWorkerHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const updateWorkerBodyDisplayNameMax = 60;
+
+export const updateWorkerBodyPhoneMax = 60;
+
+export const updateWorkerBodyEmailMax = 254;
+
+
+
+export const UpdateWorkerBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "display_name": zod.string().min(1).max(updateWorkerBodyDisplayNameMax).optional(),
+  "phone": zod.string().max(updateWorkerBodyPhoneMax).nullish(),
+  "email": zod.string().email().max(updateWorkerBodyEmailMax).nullish(),
+  "document_language": zod.enum(['en', 'es']).optional(),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']).optional()
+})
+
+export const updateWorkerResponseDisplayNameMax = 60;
+
+export const updateWorkerResponsePhoneMax = 60;
+
+export const updateWorkerResponseEmailMax = 254;
+
+
+
+export const UpdateWorkerResponse = zod.object({
+  "id": zod.string().uuid(),
+  "display_name": zod.string().min(1).max(updateWorkerResponseDisplayNameMax),
+  "phone": zod.string().max(updateWorkerResponsePhoneMax).nullable(),
+  "email": zod.string().email().max(updateWorkerResponseEmailMax).nullable(),
+  "document_language": zod.enum(['en', 'es']),
+  "status": zod.enum(['ACTIVE', 'INACTIVE']),
+  "version": zod.number().int()
+})
+
+
+export const GetWorkerYearPaidParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetWorkerYearPaidHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const GetWorkerYearPaidResponseItem = zod.object({
+  "year": zod.number().int(),
+  "net_paid_minor": zod.number().int()
+})
+export const GetWorkerYearPaidResponse = zod.array(GetWorkerYearPaidResponseItem)
+
+
+export const ListAssignmentsParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ListAssignmentsHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const listAssignmentsResponseDisplayNameMax = 60;
+
+
+
+export const ListAssignmentsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "project_id": zod.string().uuid(),
+  "worker_id": zod.string().uuid(),
+  "start_date": zod.string(),
+  "end_date": zod.string().nullable(),
+  "version": zod.number().int(),
+  "display_name": zod.string().min(1).max(listAssignmentsResponseDisplayNameMax).optional()
+})
+export const ListAssignmentsResponse = zod.array(ListAssignmentsResponseItem)
+
+
+export const CreateAssignmentParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const CreateAssignmentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const createAssignmentBodyStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createAssignmentBodyEndDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const CreateAssignmentBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "worker_id": zod.string().uuid(),
+  "start_date": zod.string().regex(createAssignmentBodyStartDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "end_date": zod.string().regex(createAssignmentBodyEndDateRegExp).nullish()
+})
+
+export const createAssignmentResponseDisplayNameMax = 60;
+
+
+
+export const CreateAssignmentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "project_id": zod.string().uuid(),
+  "worker_id": zod.string().uuid(),
+  "start_date": zod.string(),
+  "end_date": zod.string().nullable(),
+  "version": zod.number().int(),
+  "display_name": zod.string().min(1).max(createAssignmentResponseDisplayNameMax).optional()
+})
+
+
+export const RemoveAssignmentParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const RemoveAssignmentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const RemoveAssignmentBody = zod.object({
+  "operation_id": zod.string().uuid()
+})
+
+export const RemoveAssignmentResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const ListRatesParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ListRatesHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const listRatesResponseEffectiveFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const listRatesResponseRateMinorMax = 500000;
+
+export const listRatesResponseStandardDayMinutesMin = 60;
+export const listRatesResponseStandardDayMinutesMax = 1440;
+
+
+
+export const ListRatesResponseItem = zod.object({
+  "effective_from": zod.string().regex(listRatesResponseEffectiveFromRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "pay_basis": zod.enum(['DAY', 'HOUR']),
+  "rate_minor": zod.number().int().min(1).max(listRatesResponseRateMinorMax),
+  "standard_day_minutes": zod.number().int().min(listRatesResponseStandardDayMinutesMin).max(listRatesResponseStandardDayMinutesMax).nullable(),
+  "id": zod.string().uuid()
+})
+export const ListRatesResponse = zod.array(ListRatesResponseItem)
+
+
+export const ApplyRateChangeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ApplyRateChangeHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const applyRateChangeBodyEffectiveFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const applyRateChangeBodyRateMinorMax = 500000;
+
+export const applyRateChangeBodyStandardDayMinutesMin = 60;
+export const applyRateChangeBodyStandardDayMinutesMax = 1440;
+
+export const applyRateChangeBodyReasonMax = 500;
+
+
+
+export const ApplyRateChangeBody = zod.object({
+  "effective_from": zod.string().regex(applyRateChangeBodyEffectiveFromRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "pay_basis": zod.enum(['DAY', 'HOUR']),
+  "rate_minor": zod.number().int().min(1).max(applyRateChangeBodyRateMinorMax),
+  "standard_day_minutes": zod.number().int().min(applyRateChangeBodyStandardDayMinutesMin).max(applyRateChangeBodyStandardDayMinutesMax).nullish(),
+  "operation_id": zod.string().uuid(),
+  "reason": zod.string().max(applyRateChangeBodyReasonMax).nullish(),
+  "confirm": zod.boolean().optional()
+})
+
+export const ApplyRateChangeResponse = zod.object({
+  "agreement_id": zod.string().uuid(),
+  "corrected_days": zod.number().int(),
+  "total_delta_minor": zod.number().int()
+})
+
+
+export const PreviewRateChangeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const PreviewRateChangeHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const previewRateChangeBodyEffectiveFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const previewRateChangeBodyRateMinorMax = 500000;
+
+export const previewRateChangeBodyStandardDayMinutesMin = 60;
+export const previewRateChangeBodyStandardDayMinutesMax = 1440;
+
+
+
+export const PreviewRateChangeBody = zod.object({
+  "effective_from": zod.string().regex(previewRateChangeBodyEffectiveFromRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "pay_basis": zod.enum(['DAY', 'HOUR']),
+  "rate_minor": zod.number().int().min(1).max(previewRateChangeBodyRateMinorMax),
+  "standard_day_minutes": zod.number().int().min(previewRateChangeBodyStandardDayMinutesMin).max(previewRateChangeBodyStandardDayMinutesMax).nullish()
+})
+
+export const PreviewRateChangeResponse = zod.object({
+  "affected": zod.array(zod.object({
+  "work_date": zod.string(),
+  "old_earned_minor": zod.number().int(),
+  "new_earned_minor": zod.number().int(),
+  "delta_minor": zod.number().int()
+})),
+  "total_delta_minor": zod.number().int(),
+  "blocked_reason": zod.string().nullable()
+})
+
+
+export const listWorkEntriesQueryFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const listWorkEntriesQueryToRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const ListWorkEntriesQueryParams = zod.object({
+  "assignment_id": zod.coerce.string().uuid(),
+  "from": zod.coerce.string().regex(listWorkEntriesQueryFromRegExp),
+  "to": zod.coerce.string().regex(listWorkEntriesQueryToRegExp)
+})
+
+export const ListWorkEntriesHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const listWorkEntriesResponsePortionRegExp = new RegExp('^(1(?:\\.0{1,4})?|0\\.\\d{1,4})$');
+export const listWorkEntriesResponseMinutesMax = 1440;
+
+
+
+export const ListWorkEntriesResponseItem = zod.object({
+  "work_date": zod.string(),
+  "version": zod.number().int(),
+  "input_mode": zod.enum(['DAY_PORTION', 'DAY_MINUTES', 'HOUR_MINUTES', 'NO_WORK', 'VOID']),
+  "portion": zod.string().regex(listWorkEntriesResponsePortionRegExp).nullable(),
+  "minutes": zod.number().int().min(1).max(listWorkEntriesResponseMinutesMax).nullable(),
+  "earned_minor": zod.number().int()
+})
+export const ListWorkEntriesResponse = zod.array(ListWorkEntriesResponseItem)
+
+
+export const RecordWorkHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const recordWorkBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const recordWorkBodyPortionRegExp = new RegExp('^(1(?:\\.0{1,4})?|0\\.\\d{1,4})$');
+export const recordWorkBodyMinutesMax = 1440;
+
+export const recordWorkBodyExpectedVersionMin = 0;
+export const recordWorkBodyExpectedVersionMax = 2147483647;
+
+export const recordWorkBodyReasonMax = 500;
+
+export const recordWorkBodyNoteMax = 500;
+
+
+
+export const RecordWorkBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "assignment_id": zod.string().uuid(),
+  "date": zod.string().regex(recordWorkBodyDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "mode": zod.enum(['DAY_PORTION', 'DAY_MINUTES', 'HOUR_MINUTES', 'NO_WORK', 'VOID']),
+  "portion": zod.string().regex(recordWorkBodyPortionRegExp).nullish(),
+  "minutes": zod.number().int().min(1).max(recordWorkBodyMinutesMax).nullish(),
+  "expected_version": zod.number().int().min(recordWorkBodyExpectedVersionMin).max(recordWorkBodyExpectedVersionMax),
+  "reason": zod.string().max(recordWorkBodyReasonMax).nullish(),
+  "note": zod.string().max(recordWorkBodyNoteMax).nullish()
+})
+
+export const RecordWorkResponse = zod.object({
+  "entry_id": zod.string().uuid(),
+  "version": zod.number().int(),
+  "revision": zod.number().int(),
+  "earned_minor": zod.number().int(),
+  "delta_minor": zod.number().int()
+})
+
+
+export const MarkRestNoWorkHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const markRestNoWorkBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const MarkRestNoWorkBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "project_id": zod.string().uuid(),
+  "date": zod.string().regex(markRestNoWorkBodyDateRegExp).describe('Valid calendar date in YYYY-MM-DD format')
+})
+
+export const MarkRestNoWorkResponse = zod.object({
+  "marked": zod.number().int()
+})
+
+
+export const listPaymentsQueryFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const listPaymentsQueryToRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const ListPaymentsQueryParams = zod.object({
+  "from": zod.coerce.string().regex(listPaymentsQueryFromRegExp).optional(),
+  "to": zod.coerce.string().regex(listPaymentsQueryToRegExp).optional(),
+  "worker_id": zod.coerce.string().uuid().optional()
+})
+
+export const ListPaymentsHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const listPaymentsResponseMethodNoteMax = 500;
+
+export const listPaymentsResponseReferenceMax = 500;
+
+export const listPaymentsResponseNoteMax = 500;
+
+
+
+export const ListPaymentsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "receipt_no": zod.number().int(),
+  "payment_date": zod.string(),
+  "method": zod.enum(['CASH', 'CHECK', 'BANK_TRANSFER', 'ZELLE', 'OTHER']),
+  "method_note": zod.string().max(listPaymentsResponseMethodNoteMax).nullable(),
+  "amount_minor": zod.number().int(),
+  "recipient_label": zod.string(),
+  "reference": zod.string().max(listPaymentsResponseReferenceMax).nullable(),
+  "note": zod.string().max(listPaymentsResponseNoteMax).nullable(),
+  "clearance": zod.union([zod.literal('ISSUED'),zod.literal('CLEARED'),zod.literal('RETURNED'),zod.literal(null)]).nullable(),
+  "replaces_payment_id": zod.string().uuid().nullable(),
+  "version": zod.number().int(),
+  "allocations": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "assignment_id": zod.string().uuid(),
+  "amount_minor": zod.number().int()
+}))
+})
+export const ListPaymentsResponse = zod.array(ListPaymentsResponseItem)
+
+
+export const RecordPaymentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const recordPaymentBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const recordPaymentBodyMethodNoteMax = 500;
+
+export const recordPaymentBodyAmountMinorMax = 10000000;
+
+export const recordPaymentBodyRecipientMax = 80;
+
+export const recordPaymentBodyReferenceMax = 500;
+
+export const recordPaymentBodyAllocationsItemAmountMinorMax = 10000000;
+
+
+export const recordPaymentBodyNoteMax = 500;
+
+
+
+export const RecordPaymentBody = zod.object({
+  "date": zod.string().regex(recordPaymentBodyDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "method": zod.enum(['CASH', 'CHECK', 'BANK_TRANSFER', 'ZELLE', 'OTHER']),
+  "method_note": zod.string().max(recordPaymentBodyMethodNoteMax).nullish(),
+  "amount_minor": zod.number().int().min(1).max(recordPaymentBodyAmountMinorMax).describe('Integer cents, never a floating-point money amount'),
+  "recipient": zod.string().min(1).max(recordPaymentBodyRecipientMax),
+  "reference": zod.string().max(recordPaymentBodyReferenceMax).nullish(),
+  "allocations": zod.array(zod.object({
+  "assignment_id": zod.string().uuid(),
+  "amount_minor": zod.number().int().min(1).max(recordPaymentBodyAllocationsItemAmountMinorMax).describe('Integer cents, never a floating-point money amount')
+}).strict()).min(1),
+  "operation_id": zod.string().uuid(),
+  "note": zod.string().max(recordPaymentBodyNoteMax).nullish()
+}).strict()
+
+export const RecordPaymentResponse = zod.object({
+  "payment_id": zod.string().uuid(),
+  "receipt_no": zod.number().int(),
+  "version": zod.number().int()
+})
+
+
+export const ReversePaymentParams = zod.object({
+  "id": zod.string().uuid()
+})
+
+export const ReversePaymentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const reversePaymentBodyReasonMax = 500;
+
+export const reversePaymentBodyExpectedVersionMin = 0;
+export const reversePaymentBodyExpectedVersionMax = 2147483647;
+
+export const reversePaymentBodyEffectiveDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const reversePaymentBodyLinesItemAmountMinorMax = 10000000;
+
+
+
+
+export const ReversePaymentBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "kind": zod.enum(['FULL', 'PARTIAL', 'CHECK_RETURNED', 'CORRECTION']),
+  "reason": zod.string().min(1).max(reversePaymentBodyReasonMax),
+  "expected_version": zod.number().int().min(reversePaymentBodyExpectedVersionMin).max(reversePaymentBodyExpectedVersionMax),
+  "effective_date": zod.string().regex(reversePaymentBodyEffectiveDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "lines": zod.array(zod.object({
+  "allocation_id": zod.string().uuid(),
+  "amount_minor": zod.number().int().min(1).max(reversePaymentBodyLinesItemAmountMinorMax).describe('Integer cents, never a floating-point money amount')
+}).strict()).min(1).nullish()
+}).strict()
+
+export const ReversePaymentResponse = zod.object({
+  "reversal_id": zod.string().uuid(),
+  "payment_version": zod.number().int(),
+  "reversed_minor": zod.number().int(),
+  "unreversed_minor": zod.number().int()
+})
+
+
+export const ClearPaymentParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ClearPaymentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const clearPaymentBodyExpectedVersionMin = 0;
+export const clearPaymentBodyExpectedVersionMax = 2147483647;
+
+
+
+export const ClearPaymentBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "expected_version": zod.number().int().min(clearPaymentBodyExpectedVersionMin).max(clearPaymentBodyExpectedVersionMax)
+})
+
+export const ClearPaymentResponse = zod.object({
+  "payment_version": zod.number().int(),
+  "clearance": zod.enum(['CLEARED'])
+})
+
+
+export const CorrectPaymentParams = zod.object({
+  "id": zod.string().uuid()
+})
+
+export const CorrectPaymentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const correctPaymentBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const correctPaymentBodyMethodNoteMax = 500;
+
+export const correctPaymentBodyAmountMinorMax = 10000000;
+
+export const correctPaymentBodyRecipientMax = 80;
+
+export const correctPaymentBodyReferenceMax = 500;
+
+export const correctPaymentBodyAllocationsItemAmountMinorMax = 10000000;
+
+
+export const correctPaymentBodyExpectedVersionMin = 0;
+export const correctPaymentBodyExpectedVersionMax = 2147483647;
+
+export const correctPaymentBodyEffectiveDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const correctPaymentBodyReasonMax = 500;
+
+
+
+export const CorrectPaymentBody = zod.object({
+  "date": zod.string().regex(correctPaymentBodyDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "method": zod.enum(['CASH', 'CHECK', 'BANK_TRANSFER', 'ZELLE', 'OTHER']),
+  "method_note": zod.string().max(correctPaymentBodyMethodNoteMax).nullish(),
+  "amount_minor": zod.number().int().min(1).max(correctPaymentBodyAmountMinorMax).describe('Integer cents, never a floating-point money amount'),
+  "recipient": zod.string().min(1).max(correctPaymentBodyRecipientMax),
+  "reference": zod.string().max(correctPaymentBodyReferenceMax).nullish(),
+  "allocations": zod.array(zod.object({
+  "assignment_id": zod.string().uuid(),
+  "amount_minor": zod.number().int().min(1).max(correctPaymentBodyAllocationsItemAmountMinorMax).describe('Integer cents, never a floating-point money amount')
+}).strict()).min(1),
+  "operation_id": zod.string().uuid(),
+  "expected_version": zod.number().int().min(correctPaymentBodyExpectedVersionMin).max(correctPaymentBodyExpectedVersionMax),
+  "effective_date": zod.string().regex(correctPaymentBodyEffectiveDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "reason": zod.string().min(1).max(correctPaymentBodyReasonMax)
+}).strict()
+
+export const CorrectPaymentResponse = zod.object({
+  "replaced_payment_id": zod.string().uuid(),
+  "reversal": zod.object({
+  "reversal_id": zod.string().uuid(),
+  "payment_version": zod.number().int(),
+  "reversed_minor": zod.number().int(),
+  "unreversed_minor": zod.number().int()
+}),
+  "payment": zod.object({
+  "payment_id": zod.string().uuid(),
+  "receipt_no": zod.number().int(),
+  "version": zod.number().int()
+})
+})
+
+
+export const ListBalancesQueryParams = zod.object({
+  "project_id": zod.coerce.string().uuid().optional(),
+  "worker_id": zod.coerce.string().uuid().optional()
+})
+
+export const ListBalancesHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const ListBalancesResponseItem = zod.object({
+  "assignment_id": zod.string().uuid(),
+  "project_id": zod.string().uuid(),
+  "worker_id": zod.string().uuid(),
+  "balance_minor": zod.number().int()
+})
+export const ListBalancesResponse = zod.array(ListBalancesResponseItem)
+
+
+export const listHistoryQueryFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const listHistoryQueryToRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const ListHistoryQueryParams = zod.object({
+  "project_id": zod.coerce.string().uuid().optional(),
+  "worker_id": zod.coerce.string().uuid().optional(),
+  "from": zod.coerce.string().regex(listHistoryQueryFromRegExp).optional(),
+  "to": zod.coerce.string().regex(listHistoryQueryToRegExp).optional()
+})
+
+export const ListHistoryHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const ListHistoryResponseItem = zod.object({
+  "effective_date": zod.string(),
+  "event_type": zod.enum(['EARNING', 'EARNING_CORRECTION', 'REIMBURSEMENT', 'ADJUSTMENT', 'PAYMENT', 'PAYMENT_REVERSAL']),
+  "signed_delta": zod.number().int(),
+  "source_type": zod.string(),
+  "source_id": zod.string().uuid(),
+  "seq": zod.number().int()
+})
+export const ListHistoryResponse = zod.array(ListHistoryResponseItem)
+
+
+export const RecordReimbursementHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const recordReimbursementBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const recordReimbursementBodyAmountMinorMax = 5000000;
+
+export const recordReimbursementBodyDescriptionMax = 500;
+
+
+
+export const RecordReimbursementBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "assignment_id": zod.string().uuid(),
+  "date": zod.string().regex(recordReimbursementBodyDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "amount_minor": zod.number().int().min(1).max(recordReimbursementBodyAmountMinorMax),
+  "description": zod.string().min(1).max(recordReimbursementBodyDescriptionMax)
+})
+
+export const RecordReimbursementResponse = zod.object({
+  "reimbursement_id": zod.string().uuid()
+})
+
+
+export const RecordAdjustmentHeader = zod.object({
+  "X-Workspace-Id": zod.string().uuid()
+})
+
+export const recordAdjustmentBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const recordAdjustmentBodyAmountMinorMax = 10000000;
+
+export const recordAdjustmentBodyReasonMax = 500;
+
+
+
+export const RecordAdjustmentBody = zod.object({
+  "operation_id": zod.string().uuid(),
+  "assignment_id": zod.string().uuid(),
+  "date": zod.string().regex(recordAdjustmentBodyDateRegExp).describe('Valid calendar date in YYYY-MM-DD format'),
+  "direction": zod.enum(['INCREASE_OWED', 'DECREASE_OWED']),
+  "category": zod.enum(['OPENING_BALANCE', 'BONUS', 'OVERTIME', 'DEDUCTION', 'OTHER']),
+  "amount_minor": zod.number().int().min(1).max(recordAdjustmentBodyAmountMinorMax).describe('Integer cents, never a floating-point money amount'),
+  "reason": zod.string().min(1).max(recordAdjustmentBodyReasonMax)
+})
+
+export const RecordAdjustmentResponse = zod.object({
+  "adjustment_id": zod.string().uuid()
+})
+
+
