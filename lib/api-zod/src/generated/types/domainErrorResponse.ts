@@ -8,6 +8,6 @@
 import type { ErrorResponse } from './errorResponse';
 
 /**
- * Standard error envelope (400 validation, 401 session, 403 permission, 404 missing or foreign resource, 500 internal error)
+ * Standard error envelope (400 validation, 401 session, 403 permission, 404 missing, foreign or excluded-role resource, 500 internal error). All S1 domain routes retain existing HOME permissions. Interim BUSINESS access requires OWNER, or ADMIN with financial_access=true; other BUSINESS roles receive 404 before domain action or schema validation. Business job/worker scoping is deferred to its own phase. Identity and membership routes retain their existing permissions.
  */
 export type DomainErrorResponse = ErrorResponse;

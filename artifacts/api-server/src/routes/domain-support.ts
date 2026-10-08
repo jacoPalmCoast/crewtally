@@ -2,6 +2,20 @@ import type { Request } from "express";
 import type { PoolClient } from "pg";
 import { z } from "zod";
 import { operation } from "./workspaces";
+import { memberRoute } from "./registration";
+import type { Member } from "../auth/member";
+
+export function authorizeDomainMember(member: Member): void {
+  if (member.kind === "HOME") return;
+  if (member.kind === "BUSINESS" &&
+      (member.role === "OWNER" || (member.role === "ADMIN" && member.financial_access === true))) return;
+  notFound();
+}
+
+// All S1 handlers share the approved interim scope. Identity routes keep their
+// existing gates. Business job/worker scoping is deferred until its own phase.
+export const domainRoute: typeof memberRoute = (router, db, method, path, action, handler) =>
+  memberRoute(router, db, method, path, action, handler, authorizeDomainMember);
 
 export const id = z.string().uuid();
 export const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {

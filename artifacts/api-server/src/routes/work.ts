@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { RecordWorkBody, MarkRestNoWorkBody } from "@workspace/api-zod";
-import { memberRoute } from "./registration";
+import { domainRoute as memberRoute } from "./domain-support";
 import { date, exists, id, numbers, parseBody, rule, sqlResult } from "./domain-support";
 
 export function createWorkRouter(db: Pool) {

@@ -35,11 +35,13 @@ export function sessionRoute(router: IRouter, db: Pool, method: Method, path: st
 export function memberRoute(
   router: IRouter, db: Pool, method: Method, path: string, action: string,
   handler: (tx: PoolClient, member: membership.Member, workspaceId: string, req: Request) => Promise<unknown>,
+  authorize?: (member: membership.Member) => void,
 ) {
   record(router, { method, path, kind: "member", action });
   router[method](path, requireSession(db), async (req, res, next) => {
     try {
-      const result = await membership.withMember(db, req, action, (tx, member, workspaceId) => handler(tx, member, workspaceId, req));
+      const result = await membership.withMember(db, req, action,
+        (tx, member, workspaceId) => handler(tx, member, workspaceId, req), authorize);
       if (path.startsWith("/invitations") && result && typeof result === "object" && "id" in result) {
         res.locals.invitationId = result.id;
       }

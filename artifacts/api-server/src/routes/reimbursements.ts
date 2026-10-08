@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Pool } from "pg";
 import { RecordReimbursementBody } from "@workspace/api-zod";
-import { memberRoute } from "./registration";
+import { domainRoute as memberRoute } from "./domain-support";
 import { parseBody, sqlResult } from "./domain-support";
 
 export function createReimbursementsRouter(db: Pool) {

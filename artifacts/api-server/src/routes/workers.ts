@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Pool } from "pg";
 import { CreateWorkerBody, UpdateWorkerBody } from "@workspace/api-zod";
 import { withWorkspaceIdempotency } from "../idempotency";
-import { memberRoute } from "./registration";
+import { domainRoute as memberRoute } from "./domain-support";
 import { exists, id, notFound, numbers, parseBody, rule } from "./domain-support";
 
 const columns = "id,display_name,phone,email,status,document_language,version";

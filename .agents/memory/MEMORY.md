@@ -3,3 +3,4 @@
 - [Expo restart readiness](expo-restart-readiness.md) — session login and workflow “running” do not prove Metro restarted; confirm a new QR and watch for stale child processes.
 - [Credential idempotency hashing](credential-idempotency-hashing.md) — plaintext absence is insufficient: low-entropy codes must be peppered before request hashing.
 - [Orval contract pitfalls](orval-contract-pitfalls.md) — YAML merge keys are not expanded; nested object strictness needs generator configuration.
+- [S1 Business scope](s1-business-scope.md) — user-approved interim access is HOME plus Business money managers, not LEAD/WORKER workspace-wide access.

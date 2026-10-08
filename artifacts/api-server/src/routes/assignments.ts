@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Pool } from "pg";
 import { CreateAssignmentBody, RemoveAssignmentBody } from "@workspace/api-zod";
 import { withWorkspaceIdempotency } from "../idempotency";
-import { memberRoute } from "./registration";
+import { domainRoute as memberRoute } from "./domain-support";
 import { exists, id, notFound, parseBody, rule } from "./domain-support";
 
 export function createAssignmentsRouter(db: Pool) {

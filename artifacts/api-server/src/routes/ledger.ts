@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Pool } from "pg";
 import { z } from "zod";
-import { memberRoute } from "./registration";
+import { domainRoute as memberRoute } from "./domain-support";
 import { checkFilters, filters, id, numbers } from "./domain-support";
 
 export function createLedgerRouter(db: Pool) {

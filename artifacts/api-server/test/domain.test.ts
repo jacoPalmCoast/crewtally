@@ -364,17 +364,6 @@ describe("tenant context and input boundaries", () => {
       expect(response.headers["cache-control"]).toBe("no-store");
     }
   });
-  it("enforces actual lead and worker work gates and denies their money writes", async () => {
-    const f = await fixture(true, "BUSINESS");
-    for (const role of ["LEAD", "WORKER"]) {
-      const user = await f.h.createUser(role);
-      await f.h.addMember(f.workspaceId, user, role, role === "WORKER" ? { workerId: f.worker } : {});
-      const agent = (await f.h.agentFor(user, f.workspaceId)).agent;
-      expect((await agent.post("/v1/work-entries").send(workBody(f, { date: role === "LEAD" ? "2026-10-02" : "2026-10-03" }))).status).toBe(200);
-      expect((await agent.post("/v1/payments").send(paymentBody(f))).status).toBe(403);
-      expect((await agent.get("/v1/balances")).status).toBe(403);
-    }
-  });
   it("rejects unknown fields, malformed dates, fractional/unsafe/over-limit cents and invalid rate/day inputs", async () => {
     const f = await fixture();
     for (const extra of [{ workspace_id: f.workspaceId }, { date: "2026-02-30" }, { expected_version: 1.5 }]) {

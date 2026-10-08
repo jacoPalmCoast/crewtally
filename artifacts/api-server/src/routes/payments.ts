@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Pool } from "pg";
 import { z } from "zod";
 import { RecordPaymentBody, ReversePaymentBody, ClearPaymentBody, CorrectPaymentBody } from "@workspace/api-zod";
-import { memberRoute } from "./registration";
+import { domainRoute as memberRoute } from "./domain-support";
 import { checkFilters, date, id, numbers, parseBody, sqlResult, validatePayment } from "./domain-support";
 
 export function createPaymentsRouter(db: Pool) {
