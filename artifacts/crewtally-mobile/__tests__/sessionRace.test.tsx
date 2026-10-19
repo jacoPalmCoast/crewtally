@@ -20,8 +20,8 @@ jest.mock('expo-crypto', () => ({
   CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
   CryptoEncoding: { HEX: 'hex' },
 }));
-jest.mock('@/lib/mobileApi', () => ({ ...jest.requireActual('@/lib/mobileApi'), getMe: jest.fn() }));
 jest.mock('@workspace/api-client-react', () => ({
+  ...jest.requireActual('@workspace/api-client-react'),
   getMe: jest.fn(), signInWithApple: jest.fn(), signOut: jest.fn(),
   setBaseUrl: jest.fn(), setAuthTokenGetter: jest.fn(), setUnauthorizedHandler: jest.fn(),
 }));
@@ -29,12 +29,11 @@ jest.mock('@workspace/api-client-react', () => ({
 import * as Apple from 'expo-apple-authentication';
 import * as SecureStore from 'expo-secure-store';
 import * as Api from '@workspace/api-client-react';
-import * as Mobile from '@/lib/mobileApi';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { clearToken, loadToken, peekToken, saveToken } from '@/lib/sessionStore';
 import { reportUnauthorized } from '@/lib/authEvents';
 
-const api = { signInWithApple: (Api as unknown as Record<'signInWithApple', jest.Mock>).signInWithApple, getMe: Mobile.getMe as unknown as jest.Mock };
+const api = Api as unknown as Record<'signInWithApple' | 'getMe', jest.Mock>;
 const apple = Apple as unknown as { signInAsync: jest.Mock };
 const OLD = 'O'.repeat(43);
 const NEW = 'N'.repeat(43);

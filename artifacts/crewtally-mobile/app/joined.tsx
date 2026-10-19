@@ -6,7 +6,7 @@ import { Page } from '@/components/Page';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useColors } from '@/hooks/useColors';
-import { getMembers } from '@/lib/mobileApi';
+import { listMembers } from '@workspace/api-client-react';
 import { roleLabel } from '@/lib/roles';
 
 export default function JoinedScreen() {
@@ -18,7 +18,7 @@ export default function JoinedScreen() {
   useEffect(() => {
     if (!workspaceId) return;
     let live = true;
-    getMembers()
+    listMembers()
       .then((r) => {
         const o = r.members.find((m) => m.role === 'ORGANIZER' || m.role === 'OWNER');
         if (live && o) setOrganizer(o.display_name ?? o.name ?? null);

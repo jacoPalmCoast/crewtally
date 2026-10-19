@@ -4,6 +4,7 @@
     "strict": true,
     "types": ["jest"],
     "paths": {
+      "@workspace/api-zod": ["../../lib/api-zod/src/index.ts"],
       "@/*": [
         "./*"
       ]
@@ -16,6 +17,9 @@
     "expo-env.d.ts"
   ],
   "references": [
+    {
+      "path": "../../lib/api-zod"
+    },
     {
       "path": "../../lib/api-client-react"
     }

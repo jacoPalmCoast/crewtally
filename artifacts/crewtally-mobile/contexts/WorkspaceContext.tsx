@@ -4,10 +4,9 @@ import React, {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  createWorkspace, getWorkspace, setActiveWorkspaceId, setWorkspaceGoneListener,
-  type Role, type WorkspaceDetail, type WorkspaceKind,
-} from '@/lib/mobileApi';
+import { createWorkspace, getWorkspace } from '@workspace/api-client-react';
+import { setActiveWorkspaceId, setWorkspaceGoneListener } from '@/lib/authEvents';
+import type { Member, WorkspaceAccess as WorkspaceDetail, WorkspaceKind } from '@workspace/api-zod';
 import { dropSavedWorkspaceId, loadSavedWorkspaceId, saveWorkspaceId } from '@/lib/workspaceStore';
 
 export type WorkspacePhase = 'loading' | 'switching' | 'ready' | 'removed' | 'switcher' | 'none' | 'error';
@@ -17,7 +16,7 @@ interface WorkspaceValue {
   workspaceId: string | null;
   workspace: WorkspaceDetail | null;
   kind: WorkspaceKind | null;
-  role: Role | null;
+  role: Member['role'] | null;
   can: Record<string, boolean>;
   error: string | null;
   switchTo: (id: string) => Promise<void>;
@@ -179,7 +178,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [open]);
 
   const createHome = useCallback(async (name: string, timezone: string, operationId: string) => {
-    const created = await createWorkspace({ kind: 'HOME', name, timezone }, operationId);
+    const created = await createWorkspace({ kind: 'HOME', name, timezone, operation_id: operationId });
     await refreshRef.current().catch(() => null);
     await open(created.id);
     return created.id;

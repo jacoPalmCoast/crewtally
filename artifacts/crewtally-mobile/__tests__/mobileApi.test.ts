@@ -1,91 +1,184 @@
 const mockToken = { value: 'TOK' as string | null };
 jest.mock('@/lib/sessionStore', () => ({ peekToken: () => mockToken.value }));
-jest.mock('@workspace/api-client-react', () => ({ healthCheck: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn() }));
 
-import { reportUnauthorized } from '@/lib/authEvents';
-import * as Api from '@/lib/mobileApi';
+import * as Api from '@workspace/api-client-react';
+import {
+  configureApiClient, setActiveWorkspaceId, setWorkspaceGoneListener, setUnauthorizedListener,
+} from '@/lib/authEvents';
 import { createOperationKeeper } from '@/lib/operation';
 import { roleLabel, tokenFromLink } from '@/lib/roles';
 
-jest.mock('@/lib/authEvents', () => ({ reportUnauthorized: jest.fn() }));
-
 const WS = '11111111-2222-4333-8444-555555555555';
 const fetchMock = jest.fn();
-const ok = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body });
+const ok = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status, headers: { 'Content-Type': 'application/json' },
+});
+const headersAt = (index = 0): Headers => fetchMock.mock.calls[index][1].headers;
 
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.EXPO_PUBLIC_DOMAIN = 'dev.example.test';
   mockToken.value = 'TOK';
-  Api.setActiveWorkspaceId(null);
-  (globalThis as unknown as { fetch: unknown }).fetch = fetchMock;
+  setActiveWorkspaceId(null);
+  setWorkspaceGoneListener(null);
+  configureApiClient();
+  globalThis.fetch = fetchMock;
 });
+afterEach(() => { Api.setRequestPolicy(null); Api.setUnauthorizedHandler(null); });
 
-describe('API client', () => {
-  it('sends X-Workspace-Id on workspace routes only', async () => {
-    fetchMock.mockResolvedValue(ok({ id: WS }));
-    Api.setActiveWorkspaceId(WS);
+describe('configured generated client', () => {
+  it('uses the configured host once and adds workspace context only to workspace routes', async () => {
+    setActiveWorkspaceId(WS);
+    fetchMock.mockImplementation(async () => ok({}));
     await Api.getWorkspace();
-    await Api.getMe();
-    const [first, second] = fetchMock.mock.calls;
-    expect(first[0]).toBe('https://dev.example.test/api/v1/workspace');
-    expect(first[1].headers['X-Workspace-Id']).toBe(WS);
-    expect(first[1].headers.Authorization).toBe('Bearer TOK');
-    expect(second[1].headers['X-Workspace-Id']).toBeUndefined();
+    expect(fetchMock.mock.calls[0][0]).toMatch(/^https:\/\/dev\.example\.test\//);
+    expect(fetchMock.mock.calls[0][0].endsWith(Api.getGetWorkspaceUrl())).toBe(true);
+    expect(headersAt().get('X-Workspace-Id')).toBe(WS);
+    expect(headersAt().get('Authorization')).toBe('Bearer TOK');
+    for (const call of [
+      () => Api.getMe(), () => Api.getConfig(),
+      () => Api.updateAccountName({ display_name: 'Casey', operation_id: 'op' }),
+      () => Api.createWorkspace({ kind: 'HOME', name: 'n', timezone: 'UTC', operation_id: 'op' }),
+      () => Api.peekInvitation({ token: 't' }),
+      () => Api.acceptInvitation({ token: 't', operation_id: 'op' }),
+      () => Api.acceptInvitationCode({ email: 'a@b.co', code: '123456', operation_id: 'op' }),
+      () => Api.signInWithApple({ identityToken: 't', authorizationCode: 'a', rawNonce: 'n'.repeat(43) }),
+    ]) {
+      await call();
+      expect(headersAt(fetchMock.mock.calls.length - 1).has('X-Workspace-Id')).toBe(false);
+    }
+    for (const call of [
+      () => Api.listMembers(), () => Api.listInvitations(),
+      () => Api.createInvitation({ role: 'PARTNER', email: 'a@b.co', operation_id: 'op' }),
+      () => Api.removeMember('u', { operation_id: 'op' }),
+      () => Api.revokeInvitation('i', { operation_id: 'op' }),
+    ]) {
+      await call();
+      expect(headersAt(fetchMock.mock.calls.length - 1).get('X-Workspace-Id')).toBe(WS);
+    }
   });
 
-  it('does not call a workspace route when no workspace is open', async () => {
-    await expect(Api.getMembers()).rejects.toMatchObject({ status: 404 });
+  it('does not fetch workspace routes without an open workspace', async () => {
+    await expect(Api.listMembers()).rejects.toMatchObject({ status: 404 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('puts the operation_id in every write body, and a retry sends the same one', async () => {
-    Api.setActiveWorkspaceId(WS);
-    const keeper = createOperationKeeper(jest.fn().mockReturnValueOnce('op-1').mockReturnValueOnce('op-2'));
-    fetchMock.mockRejectedValueOnce(new TypeError('offline')).mockResolvedValueOnce(ok({ id: 'i1' }));
-    const input = { role: 'PARTNER' as const, email: 'a@b.co' };
-    await expect(Api.createInvitation(input, keeper.idFor('a@b.co'))).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
-    await Api.createInvitation(input, keeper.idFor('a@b.co')); // retry
-    const bodies = fetchMock.mock.calls.map((c) => JSON.parse(c[1].body));
-    expect(bodies[0].operation_id).toBe('op-1');
-    expect(bodies[1].operation_id).toBe('op-1');
-    keeper.done();
-    expect(keeper.idFor('a@b.co')).toBe('op-2');
+  it('uses only the active workspace and strips caller-supplied headers from unscoped routes', async () => {
+    setActiveWorkspaceId(WS);
+    fetchMock.mockImplementation(async () => ok({}));
+    await Api.listMembers({ headers: { 'X-Workspace-Id': 'forged' } });
+    expect(headersAt().get('X-Workspace-Id')).toBe(WS);
+    await Api.getMe({ headers: { 'X-Workspace-Id': 'forged' } });
+    expect(headersAt(1).has('X-Workspace-Id')).toBe(false);
   });
 
-  it('a changed request gets a new operation_id', () => {
+  it('keeps operation_id through a network failure and changes it when the request changes', async () => {
+    setActiveWorkspaceId(WS);
+    const keeper = createOperationKeeper(jest.fn().mockReturnValueOnce('op-1').mockReturnValueOnce('op-2'));
+    fetchMock.mockRejectedValueOnce(new TypeError('offline')).mockImplementation(async () => ok({}));
+    const input = { role: 'PARTNER' as const, email: 'a@b.co' };
+    await expect(Api.createInvitation({ ...input, operation_id: keeper.idFor(input.email) }))
+      .rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    await Api.createInvitation({ ...input, operation_id: keeper.idFor(input.email) });
+    expect(fetchMock.mock.calls.map(c => JSON.parse(c[1].body).operation_id)).toEqual(['op-1', 'op-1']);
+    expect(keeper.idFor('changed@example.com')).toBe('op-2');
+  });
+
+  it('starts a fresh operation after a successful logical write', () => {
     const keeper = createOperationKeeper(jest.fn().mockReturnValueOnce('a').mockReturnValueOnce('b'));
-    expect(keeper.idFor('x')).toBe('a');
-    expect(keeper.idFor('y')).toBe('b');
+    expect(keeper.idFor('same')).toBe('a');
+    keeper.done();
+    expect(keeper.idFor('same')).toBe('b');
   });
 
   it.each([
-    ['patchMe', () => Api.patchMe('Casey', 'op')],
-    ['createWorkspace', () => Api.createWorkspace({ kind: 'HOME', name: 'n', timezone: 'UTC' }, 'op')],
-    ['acceptInvite', () => Api.acceptInvite('t', 'op')],
-    ['acceptInviteCode', () => Api.acceptInviteCode('a@b.co', '123456', 'op')],
-    ['removeMember', () => Api.removeMember('u', 'op')],
-    ['revokeInvitation', () => Api.revokeInvitation('i', 'op')],
-  ])('%s carries operation_id', async (_n, call) => {
-    Api.setActiveWorkspaceId(WS);
+    ['updateAccountName', () => Api.updateAccountName({ display_name: 'Casey', operation_id: 'op' })],
+    ['createWorkspace', () => Api.createWorkspace({ kind: 'HOME', name: 'n', timezone: 'UTC', operation_id: 'op' })],
+    ['createInvitation', () => Api.createInvitation({ role: 'PARTNER', email: 'a@b.co', operation_id: 'op' })],
+    ['acceptInvitation', () => Api.acceptInvitation({ token: 't', operation_id: 'op' })],
+    ['acceptInvitationCode', () => Api.acceptInvitationCode({ email: 'a@b.co', code: '123456', operation_id: 'op' })],
+    ['removeMember', () => Api.removeMember('u', { operation_id: 'op' })],
+    ['revokeInvitation', () => Api.revokeInvitation('i', { operation_id: 'op' })],
+  ])('%s sends operation_id through customFetch', async (_name, call) => {
+    setActiveWorkspaceId(WS);
     fetchMock.mockResolvedValue(ok({}));
     await call();
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).operation_id).toBe('op');
   });
 
-  it('reads string error bodies and reports 401 with the token that failed', async () => {
-    fetchMock.mockResolvedValue(ok({ error: 'SESSION_EXPIRED' }, 401));
-    await expect(Api.getMe()).rejects.toMatchObject({ status: 401, code: 'SESSION_EXPIRED' });
-    expect(reportUnauthorized).toHaveBeenCalledWith({ token: 'TOK' });
-    fetchMock.mockResolvedValue(ok({ error: 'INVITATION_CODE_WRONG' }, 400));
-    await expect(Api.acceptInviteCode('a@b.co', '1', 'op')).rejects.toMatchObject({ status: 400, code: 'INVITATION_CODE_WRONG' });
+  it('reports the failed token on 401, not a newer token installed while the request was in flight', async () => {
+    let reply!: (response: Response) => void;
+    fetchMock.mockReturnValue(new Promise<Response>(resolve => { reply = resolve; }));
+    const listener = jest.fn();
+    const off = setUnauthorizedListener(listener);
+    try {
+      const pending = Api.getMe();
+      await Promise.resolve();
+      expect(headersAt().get('Authorization')).toBe('Bearer TOK');
+      mockToken.value = 'NEW';
+      reply(ok({ error: 'SESSION_EXPIRED' }, 401));
+      await expect(pending).rejects.toMatchObject({ status: 401, code: 'SESSION_EXPIRED' });
+      expect(listener).toHaveBeenCalledWith({ token: 'TOK' });
+    } finally { off(); }
   });
 
-  it('peek is public: no bearer token', async () => {
-    fetchMock.mockResolvedValue(ok({ available: false }));
-    await Api.peekInvite('t');
-    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  it('preserves server error codes, conflict/validation types and correlation ids', async () => {
+    for (const [status, kind] of [[409, 'conflict'], [422, 'validation']] as const) {
+      fetchMock.mockResolvedValue(ok({ error: { code: 'CODE', message: 'Safe message', correlationId: 'trace' } }, status));
+      await expect(Api.getMe()).rejects.toMatchObject({ status, kind, code: 'CODE', correlationId: 'trace' });
+    }
+    fetchMock.mockResolvedValue(ok({ error: 'INVITATION_CODE_WRONG' }, 400));
+    await expect(Api.acceptInvitationCode({ email: 'a@b.co', code: '1', operation_id: 'op' }))
+      .rejects.toMatchObject({ status: 400, code: 'INVITATION_CODE_WRONG' });
+  });
+
+  it('keeps config and invitation peek public', async () => {
+    fetchMock.mockImplementation(async () => ok({ available: false }));
+    await Api.peekInvitation({ token: 't' });
+    await Api.getConfig();
+    expect(headersAt().has('Authorization')).toBe(false);
+    expect(headersAt(1).has('Authorization')).toBe(false);
+  });
+
+  it('does not expire a session when an anonymous operation fails with 401', async () => {
+    const listener = jest.fn();
+    const off = setUnauthorizedListener(listener);
+    try {
+      fetchMock.mockResolvedValue(ok({ error: 'UNAUTHORIZED' }, 401));
+      await expect(Api.peekInvitation({ token: 't' })).rejects.toMatchObject({ status: 401 });
+      expect(listener).not.toHaveBeenCalled();
+    } finally { off(); }
+  });
+
+  it('emits workspace-gone for the workspace the failed generated request carried', async () => {
+    setActiveWorkspaceId(WS);
+    const gone = jest.fn();
+    setWorkspaceGoneListener(gone);
+    let reply!: (response: Response) => void;
+    fetchMock.mockReturnValue(new Promise<Response>(resolve => { reply = resolve; }));
+    const pending = Api.listMembers();
+    await Promise.resolve();
+    setActiveWorkspaceId('new-workspace');
+    reply(ok({ error: 'NOT_FOUND' }, 404));
+    await expect(pending).rejects.toMatchObject({ status: 404 });
+    expect(gone).toHaveBeenCalledWith(WS);
+  });
+
+  it('does not emit workspace-gone for an invitation acceptance failure', async () => {
+    setActiveWorkspaceId(WS);
+    const gone = jest.fn();
+    setWorkspaceGoneListener(gone);
+    fetchMock.mockResolvedValue(ok({ error: 'NOT_FOUND' }, 404));
+    await expect(Api.acceptInvitation({ token: 't', operation_id: 'op' })).rejects.toMatchObject({ status: 404 });
+    expect(gone).not.toHaveBeenCalled();
+  });
+
+  it('fails explicitly with no domain configured', async () => {
+    delete process.env.EXPO_PUBLIC_DOMAIN;
+    configureApiClient();
+    await expect(Api.getMe()).rejects.toMatchObject({ code: 'API_DOMAIN_MISSING' });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

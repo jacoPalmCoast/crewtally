@@ -12,14 +12,14 @@ import { SecondaryButton } from '@/components/SecondaryButton';
 import { WorkspaceList } from '@/components/WorkspaceList';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useColors } from '@/hooks/useColors';
-import { getConfig } from '@/lib/mobileApi';
+import { getConfig } from '@workspace/api-client-react';
 
 /** Shown while signed in with no open workspace: loading, error, access removed, switcher, or first run. */
 export default function GateScreen() {
   const colors = useColors();
   const router = useRouter();
   const { phase, error, retry, acknowledgeRemoved } = useWorkspace();
-  const config = useQuery({ queryKey: ['config'], queryFn: getConfig, enabled: phase === 'none', retry: false });
+  const config = useQuery({ queryKey: ['config'], queryFn: () => getConfig(), enabled: phase === 'none', retry: false });
 
   let body: React.ReactNode;
   if (phase === 'error') {

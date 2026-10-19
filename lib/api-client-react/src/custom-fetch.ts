@@ -18,6 +18,20 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 
+export type RequestPolicy = (request: {
+  url: string; method: string; headers: Headers;
+}) => {
+  skipAuth?: boolean;
+  onResponse?: (response: Response) => void;
+  mapError?: (error: unknown) => unknown;
+};
+let _requestPolicy: RequestPolicy | null = null;
+
+/** Configure app-specific headers and response handling without a second fetch path. */
+export function setRequestPolicy(policy: RequestPolicy | null): void {
+  _requestPolicy = policy;
+}
+
 /**
  * Set a base URL that is prepended to every relative request URL
  * (i.e. paths that start with `/`).
@@ -350,6 +364,8 @@ export async function customFetch<T = unknown>(
   }
 
   const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+  const requestInfo = { method, url: resolveUrl(input) };
+  const policy = _requestPolicy?.({ ...requestInfo, headers });
 
   if (
     typeof init.body === "string" &&
@@ -366,7 +382,7 @@ export async function customFetch<T = unknown>(
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
   let sentToken: string | null = null;
-  if (_authTokenGetter && !headers.has("authorization")) {
+  if (!policy?.skipAuth && _authTokenGetter && !headers.has("authorization")) {
     const token = await _authTokenGetter();
     if (token) {
       sentToken = token;
@@ -374,21 +390,24 @@ export async function customFetch<T = unknown>(
     }
   }
 
-  const requestInfo = { method, url: resolveUrl(input) };
+  try {
+    const response = await fetch(input, { ...init, method, headers });
+    policy?.onResponse?.(response);
 
-  const response = await fetch(input, { ...init, method, headers });
-
-  if (!response.ok) {
-    const errorData = await parseErrorBody(response, method);
-    if (response.status === 401 && _unauthorizedHandler && !requestInfo.url.includes("/auth/apple")) {
-      try {
-        _unauthorizedHandler({ status: 401, url: requestInfo.url, method, token: sentToken });
-      } catch {
-        // A handler failure must never mask the original API error.
+    if (!response.ok) {
+      const errorData = await parseErrorBody(response, method);
+      if (response.status === 401 && !policy?.skipAuth && _unauthorizedHandler && !requestInfo.url.includes("/auth/apple")) {
+        try {
+          _unauthorizedHandler({ status: 401, url: requestInfo.url, method, token: sentToken });
+        } catch {
+          // A handler failure must never mask the original API error.
+        }
       }
+      throw new ApiError(response, errorData, requestInfo);
     }
-    throw new ApiError(response, errorData, requestInfo);
-  }
 
-  return (await parseSuccessBody(response, responseType, requestInfo)) as T;
+    return (await parseSuccessBody(response, responseType, requestInfo)) as T;
+  } catch (error) {
+    throw policy?.mapError ? policy.mapError(error) : error;
+  }
 }

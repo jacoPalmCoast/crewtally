@@ -16,22 +16,21 @@ const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: jest.fn() }) }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'op') }));
-jest.mock('@workspace/api-client-react', () => ({ healthCheck: jest.fn(async () => ({ status: 'ok' })) }));
+jest.mock('@workspace/api-client-react', () => ({
+  ...jest.requireActual('@workspace/api-client-react'),
+  healthCheck: jest.fn(async () => ({ status: 'ok' })), getWorkspace: jest.fn(),
+}));
 const mockAuth = {
   status: 'signedIn', userId: 'u1', workspaces: null as unknown[] | null,
   refreshMe: jest.fn(), profile: null,
 };
 jest.mock('@/contexts/AuthContext', () => ({ useAuth: () => mockAuth }));
-jest.mock('@/lib/mobileApi', () => ({
-  ...jest.requireActual('@/lib/mobileApi'),
-  getWorkspace: jest.fn(),
-}));
-
-import * as Mobile from '@/lib/mobileApi';
+import * as Mobile from '@/lib/authEvents';
+import * as Api from '@workspace/api-client-react';
 import { WorkspaceProvider, useWorkspace } from '@/contexts/WorkspaceContext';
 import MoreScreen from '@/app/(tabs)/more';
 
-const getWorkspace = Mobile.getWorkspace as unknown as jest.Mock;
+const getWorkspace = Api.getWorkspace as unknown as jest.Mock;
 const A = { id: 'aaaaaaaa-0000-4000-8000-000000000001', name: 'Home A', kind: 'HOME', role: 'ORGANIZER', financial_access: true };
 const B = { id: 'bbbbbbbb-0000-4000-8000-000000000002', name: 'Home B', kind: 'HOME', role: 'PARTNER', financial_access: true };
 const detail = (w: typeof A, can: Record<string, boolean>) => ({ ...w, currency: 'USD', default_timezone: 'UTC', worker_id: null, can });
@@ -50,6 +49,8 @@ beforeEach(() => {
   mockAuth.workspaces = [A, B];
   mockAuth.refreshMe.mockResolvedValue(null);
   Mobile.setActiveWorkspaceId(null);
+  process.env.EXPO_PUBLIC_DOMAIN = 'x.test';
+  Mobile.configureApiClient();
 });
 
 describe('WorkspaceProvider', () => {
@@ -139,9 +140,10 @@ describe('freshness while signed in', () => {
     const h = renderHook(() => useWorkspace(), { wrapper });
     await waitFor(() => expect(h.result.current.phase).toBe('ready'));
     getWorkspace.mockRejectedValueOnce(gone);
-    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(async () => ({ ok: false, status: 404, json: async () => ({ error: 'NOT_FOUND' }) }));
+    (globalThis as unknown as { fetch: unknown }).fetch = jest.fn(async () =>
+      new Response(JSON.stringify({ error: 'NOT_FOUND' }), { status: 404, headers: { 'Content-Type': 'application/json' } }));
     process.env.EXPO_PUBLIC_DOMAIN = 'x.test';
-    await act(async () => { await Mobile.getMembers().catch(() => undefined); });
+    await act(async () => { await Api.listMembers().catch(() => undefined); });
     await waitFor(() => expect(h.result.current.phase).toBe('removed'));
   });
 });

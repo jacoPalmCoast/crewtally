@@ -12,13 +12,14 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants from 'expo-constants';
 import { useQueryClient } from '@tanstack/react-query';
 import { signInWithApple, signOut as signOutRequest } from '@workspace/api-client-react';
-import { getMe, type MeResponse, type MyWorkspace } from '@/lib/mobileApi';
+import { getMe } from '@workspace/api-client-react';
+import type { MeResponse, WorkspaceSummary } from '@workspace/api-zod';
 import { createNoncePair } from '@/lib/appleNonce';
 import { setUnauthorizedListener } from '@/lib/authEvents';
 import { clearToken, loadToken, peekToken, saveToken } from '@/lib/sessionStore';
 
 export type AuthStatus = 'restoring' | 'retry' | 'signedOut' | 'signedIn';
-export type AuthWorkspace = MyWorkspace;
+export type AuthWorkspace = WorkspaceSummary;
 export type AuthProfile = MeResponse['user'];
 
 export const SIGN_IN_AGAIN_NOTICE = 'Please sign in again';

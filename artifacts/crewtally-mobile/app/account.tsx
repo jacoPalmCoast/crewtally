@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { Field } from '@/components/Field';
 import { PrimaryButton } from '@/components/PrimaryButton';
-import { patchMe } from '@/lib/mobileApi';
+import { updateAccountName } from '@workspace/api-client-react';
 import { useOperationKeeper } from '@/lib/operation';
 import { useColors } from '@/hooks/useColors';
 import { PRIVACY_URL, SUPPORT_URL } from '@/lib/links';
@@ -25,7 +25,7 @@ export default function AccountScreen() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await patchMe(value, nameOp.idFor(value));
+      await updateAccountName({ display_name: value, operation_id: nameOp.idFor(value) });
       nameOp.done();
       await refreshMe().catch(() => null);
       setName(null);

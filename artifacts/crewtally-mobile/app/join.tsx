@@ -9,7 +9,8 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { SecondaryButton } from '@/components/SecondaryButton';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useColors } from '@/hooks/useColors';
-import { acceptInvite, acceptInviteCode, peekInvite, type PeekResult } from '@/lib/mobileApi';
+import { acceptInvitation, acceptInvitationCode, peekInvitation } from '@workspace/api-client-react';
+import type { InvitationPreview } from '@workspace/api-zod';
 import { useOperationKeeper } from '@/lib/operation';
 import { roleLabel, tokenFromLink } from '@/lib/roles';
 
@@ -34,7 +35,7 @@ export default function JoinScreen() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [link, setLink] = useState('');
-  const [peek, setPeek] = useState<PeekResult | null>(null);
+  const [peek, setPeek] = useState<InvitationPreview | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -53,7 +54,7 @@ export default function JoinScreen() {
     setBusy(true);
     setError(null);
     try {
-      const result = await acceptInviteCode(e, c, op.idFor(`code|${e}|${c}`));
+      const result = await acceptInvitationCode({ email: e, code: c, operation_id: op.idFor(`code|${e}|${c}`) });
       await finish(result.workspace_id);
     } catch (err) {
       setError(joinError(err));
@@ -71,7 +72,7 @@ export default function JoinScreen() {
     if (!t) { setUnavailable(true); return; }
     setBusy(true);
     try {
-      const r = await peekInvite(t);
+      const r = await peekInvitation({ token: t });
       if (r.available) { setPeek(r); setToken(t); } else setUnavailable(true);
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;
@@ -88,7 +89,7 @@ export default function JoinScreen() {
     setBusy(true);
     setError(null);
     try {
-      const result = await acceptInvite(token, op.idFor(`link|${token}`));
+      const result = await acceptInvitation({ token, operation_id: op.idFor(`link|${token}`) });
       await finish(result.workspace_id);
     } catch (err) {
       const status = (err as { status?: number } | null)?.status;

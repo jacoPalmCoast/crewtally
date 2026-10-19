@@ -26,11 +26,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
-jest.mock('@/lib/mobileApi', () => ({
-  ...jest.requireActual('@/lib/mobileApi'),
-  getMe: jest.fn(), getWorkspace: jest.fn(),
-}));
 jest.mock('@workspace/api-client-react', () => ({
+  ...jest.requireActual('@workspace/api-client-react'),
+  getWorkspace: jest.fn(),
   getMe: jest.fn(), signInWithApple: jest.fn(), signInDev: jest.fn(), signOut: jest.fn(), healthCheck: jest.fn(),
   setBaseUrl: jest.fn(), setAuthTokenGetter: jest.fn(), setUnauthorizedHandler: jest.fn(),
 }));
@@ -39,7 +37,6 @@ import * as Apple from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import * as Api from '@workspace/api-client-react';
-import * as Mobile from '@/lib/mobileApi';
 import { WorkspaceProvider } from '@/contexts/WorkspaceContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { base64Url, createNoncePair } from '@/lib/appleNonce';
@@ -48,8 +45,8 @@ import { reportUnauthorized } from '@/lib/authEvents';
 import AccountScreen from '@/app/account';
 import MoreScreen from '@/app/(tabs)/more';
 
-const api = { ...(Api as unknown as Record<'signInWithApple' | 'signInDev' | 'signOut' | 'healthCheck', jest.Mock>), getMe: Mobile.getMe as unknown as jest.Mock };
-const getWorkspaceMock = Mobile.getWorkspace as unknown as jest.Mock;
+const api = Api as unknown as Record<'signInWithApple' | 'signInDev' | 'signOut' | 'healthCheck' | 'getMe', jest.Mock>;
+const getWorkspaceMock = Api.getWorkspace as unknown as jest.Mock;
 const apple = Apple as unknown as { signInAsync: jest.Mock };
 const WS = { id: 'abcdef12-0000-4000-8000-000000000000', name: 'My workspace', kind: 'HOME', role: 'ORGANIZER', financial_access: true };
 const ME = { user: { id: 'u1', display_name: null, has_apple: true, email: null }, workspaces: [WS] };

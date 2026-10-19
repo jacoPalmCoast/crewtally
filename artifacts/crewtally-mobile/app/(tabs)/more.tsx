@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { removeMember } from '@/lib/mobileApi';
+import { removeMember } from '@workspace/api-client-react';
 import { useOperationKeeper } from '@/lib/operation';
 import { kindLabel, roleLabel } from '@/lib/roles';
 import { SecondaryButton } from '@/components/SecondaryButton';
@@ -32,7 +32,7 @@ export default function MoreScreen() {
     setLeaveError(null);
     try {
       try {
-        await removeMember(userId, leaveOp.idFor(`leave|${workspaceId}`));
+        await removeMember(userId, { operation_id: leaveOp.idFor(`leave|${workspaceId}`) });
       } catch (e) {
         if ((e as { status?: number } | null)?.status !== 404) throw e;
         // Already removed/left: complete the same local cleanup and navigation.

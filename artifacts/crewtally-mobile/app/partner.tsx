@@ -11,12 +11,14 @@ import { SecondaryButton } from '@/components/SecondaryButton';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useColors } from '@/hooks/useColors';
 import {
-  createInvitation, getInvitations, getMembers, removeMember, revokeInvitation, type CreatedInvitation,
-} from '@/lib/mobileApi';
+  createInvitation, listInvitations, listMembers, removeMember, revokeInvitation,
+} from '@workspace/api-client-react';
+import type { InvitationCreated, MemberList, InvitationList } from '@workspace/api-zod';
+import type { JsonDto } from '@/lib/api';
 import { useOperationKeeper } from '@/lib/operation';
 import { formatDate } from '@/lib/roles';
 
-interface Ready { id: string; link: string | null; code: string | null; email: string; expiresAt?: string; already: boolean }
+interface Ready { id: string; link: string | null; code: string | null; email: string; expiresAt?: JsonDto<InvitationCreated>['expires_at']; already: boolean }
 
 export function shareMessage(workspaceName: string, link: string, code: string, email: string): string {
   return `Join me on CrewTally to help keep track of ${workspaceName}. Open ${link} on your iPhone, or enter code ${code} with this email address: ${email}. It works for 7 days.`;
@@ -45,8 +47,8 @@ export default function PartnerScreen() {
   const [copied, setCopied] = useState<string | null>(null);
   const allowed = can['members.manage'] === true;
 
-  const members = useQuery({ queryKey: ['ws', workspaceId, 'members'], queryFn: getMembers, enabled: allowed });
-  const invitations = useQuery({ queryKey: ['ws', workspaceId, 'invitations'], queryFn: getInvitations, enabled: allowed });
+  const members = useQuery<JsonDto<MemberList>>({ queryKey: ['ws', workspaceId, 'members'], queryFn: () => listMembers(), enabled: allowed });
+  const invitations = useQuery<JsonDto<InvitationList>>({ queryKey: ['ws', workspaceId, 'invitations'], queryFn: () => listInvitations(), enabled: allowed });
   const refetchAll = () => Promise.all([
     qc.invalidateQueries({ queryKey: ['ws', workspaceId, 'members'] }),
     qc.invalidateQueries({ queryKey: ['ws', workspaceId, 'invitations'] }),
@@ -58,21 +60,21 @@ export default function PartnerScreen() {
     (i) => i.role === 'PARTNER' && i.status === 'PENDING' && new Date(i.expires_at).getTime() > Date.now(),
   );
 
-  const toReady = (r: CreatedInvitation, em: string): Ready => ({
+  const toReady = (r: JsonDto<InvitationCreated>, em: string): Ready => ({
     id: r.id, link: r.link, code: r.code, email: em, expiresAt: r.expires_at, already: r.already_created === true || !r.token,
   });
 
   const invite = useMutation({
     mutationFn: async (input: { name: string; email: string }) => {
       const body = { role: 'PARTNER' as const, email: input.email, ...(input.name ? { name: input.name } : {}) };
-      return createInvitation(body, inviteOp.idFor(`${input.email}|${input.name}`));
+      return createInvitation({ ...body, operation_id: inviteOp.idFor(`${input.email}|${input.name}`) });
     },
     onSuccess: async (r, v) => { inviteOp.done(); setReady(toReady(r, v.email)); setError(null); await refetchAll(); },
     onError: (e) => setError(errText(e, 'Could not create the invitation. Try again.')),
   });
 
   const revoke = useMutation({
-    mutationFn: async (id: string) => revokeInvitation(id, revokeOp.idFor(id)),
+    mutationFn: async (id: string) => revokeInvitation(id, { operation_id: revokeOp.idFor(id) }),
     onSuccess: async () => { revokeOp.done(); setReady(null); setError(null); await refetchAll(); },
     onError: (e) => setError(errText(e, 'Could not revoke the invitation. Try again.')),
   });
@@ -81,21 +83,21 @@ export default function PartnerScreen() {
     // Revoke this invitation, then create a new one to the same email: new link, new code, new 7 days.
     mutationFn: async (inv: { id: string; email: string; name: string | null }) => {
       try {
-        await revokeInvitation(inv.id, revokeOp.idFor(inv.id));
+        await revokeInvitation(inv.id, { operation_id: revokeOp.idFor(inv.id) });
       } catch (e) {
         if ((e as { status?: number } | null)?.status !== 404) throw e;
         // It disappeared between listing and revoke: still create a replacement.
       }
       revokeOp.done();
       const body = { role: 'PARTNER' as const, email: inv.email, ...(inv.name ? { name: inv.name } : {}) };
-      return createInvitation(body, inviteOp.idFor(`resend|${inv.id}`));
+      return createInvitation({ ...body, operation_id: inviteOp.idFor(`resend|${inv.id}`) });
     },
     onSuccess: async (r, v) => { inviteOp.done(); setReady(toReady(r, v.email)); setError(null); await refetchAll(); },
     onError: async (e) => { setError(errText(e, 'Could not send a new invitation. Try again.')); await refetchAll(); },
   });
 
   const remove = useMutation({
-    mutationFn: async (userId: string) => removeMember(userId, removeOp.idFor(userId)),
+    mutationFn: async (userId: string) => removeMember(userId, { operation_id: removeOp.idFor(userId) }),
     onSuccess: async () => { removeOp.done(); setConfirmRemove(false); setError(null); await refetchAll(); },
     onError: (e) => setError(errText(e, 'Could not remove the partner. Try again.')),
   });
