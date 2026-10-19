@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Field } from '@/components/Field';
 import { Money } from '@/components/Money';
 import { StatusLabel, type Status } from '@/components/StatusLabel';
 
@@ -15,6 +16,18 @@ describe('Money', () => {
     expect(screen.getByText('$1,245.00')).toBeTruthy();
     expect(screen.getByLabelText('1,245 dollars')).toBeTruthy();
   });
+});
+
+it('gives fields a visible focus indicator and preserves caller focus handlers', () => {
+  const onFocus = jest.fn(), onBlur = jest.fn();
+  render(<Field label="Amount (cents)" value="" onChangeText={jest.fn()} onFocus={onFocus} onBlur={onBlur} />);
+  const input = screen.getByLabelText('Amount (cents)');
+  fireEvent(input, 'focus', {});
+  expect(input).toHaveStyle({ borderWidth: 2 });
+  expect(onFocus).toHaveBeenCalledTimes(1);
+  fireEvent(input, 'blur', {});
+  expect(input).toHaveStyle({ borderWidth: 1 });
+  expect(onBlur).toHaveBeenCalledTimes(1);
 });
 
 describe('StatusLabel', () => {

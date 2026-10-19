@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import {
-  ScrollView,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { WorkspaceHeader } from '@/components/WorkspaceHeader';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 
 export interface ScreenProps {
   title: string;
@@ -16,17 +17,19 @@ export interface ScreenProps {
   contentStyle?: ViewStyle;
   /** Show the current workspace and role above the title (workspace routes). */
   workspaceHeader?: boolean;
+  headerContent?: ReactNode;
 }
 
-export function Screen({ title, children, contentStyle, workspaceHeader }: ScreenProps) {
+export function Screen({ title, children, contentStyle, workspaceHeader, headerContent }: ScreenProps) {
   const colors = useColors();
   return (
     <SafeAreaView
       edges={['top', 'left', 'right']}
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <ScrollView
-        contentContainerStyle={[styles.content, contentStyle]}
+      <KeyboardAwareScrollViewCompat
+        bottomOffset={24}
+        contentContainerStyle={[styles.content, Platform.OS === 'web' && { paddingTop: 67, paddingBottom: 34 }, contentStyle]}
         keyboardShouldPersistTaps="handled"
       >
         {workspaceHeader ? <WorkspaceHeader /> : null}
@@ -39,8 +42,9 @@ export function Screen({ title, children, contentStyle, workspaceHeader }: Scree
             {title}
           </Text>
         </View>
+        {headerContent}
         {children}
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
     </SafeAreaView>
   );
 }

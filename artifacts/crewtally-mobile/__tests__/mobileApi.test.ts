@@ -64,6 +64,45 @@ describe('configured generated client', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('scopes every S3 domain operation through the same generated fetch path', async () => {
+    setActiveWorkspaceId(WS);
+    fetchMock.mockImplementation(async () => ok({}));
+    const writes = [
+      () => Api.createProject({ name: 'Garden', timezone: 'UTC', operation_id: 'op' }),
+      () => Api.createWorker({ display_name: 'Alex', operation_id: 'op' }),
+      () => Api.updateWorker('w', { display_name: 'Alex', operation_id: 'op' }),
+      () => Api.createAssignment('p', { worker_id: 'w', start_date: '2026-01-01', operation_id: 'op' }),
+      () => Api.applyRateChange('a', { effective_from: '2026-01-01', pay_basis: 'DAY', rate_minor: 10000, operation_id: 'op' }),
+      () => Api.recordWork({ assignment_id: 'a', date: '2026-01-01', mode: 'DAY_PORTION', portion: '1', expected_version: 0, operation_id: 'op' }),
+      () => Api.markRestNoWork({ project_id: 'p', date: '2026-01-01', operation_id: 'op' }),
+      () => Api.recordPayment({ date: '2026-01-01', method: 'CASH', amount_minor: 1000, recipient: 'Crew',
+        allocations: [{ assignment_id: 'a', amount_minor: 1000 }], operation_id: 'op' }),
+      () => Api.clearPayment('pay', { expected_version: 0, operation_id: 'op' }),
+      () => Api.reversePayment('pay', { kind: 'FULL', reason: 'Duplicate', expected_version: 0,
+        effective_date: '2026-01-01', operation_id: 'op' }),
+    ];
+    for (const write of writes) {
+      await write();
+      const index = fetchMock.mock.calls.length - 1;
+      expect(headersAt(index).get('X-Workspace-Id')).toBe(WS);
+      expect(JSON.parse(fetchMock.mock.calls[index][1].body).operation_id).toBe('op');
+    }
+    for (const read of [
+      () => Api.listProjects(), () => Api.listWorkers(), () => Api.listAssignments('p'),
+      () => Api.listRates('a'), () => Api.listBalances(), () => Api.listPayments(),
+      () => Api.listWorkEntries({ assignment_id: 'a', from: '2026-01-01', to: '2026-01-01' }),
+    ]) {
+      await read();
+      expect(headersAt(fetchMock.mock.calls.length - 1).get('X-Workspace-Id')).toBe(WS);
+    }
+    setActiveWorkspaceId(null);
+    const count = fetchMock.mock.calls.length;
+    for (const read of [() => Api.listProjects(), () => Api.listWorkers(), () => Api.listBalances()]) {
+      await expect(read()).rejects.toMatchObject({ status: 404 });
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(count);
+  });
+
   it('uses only the active workspace and strips caller-supplied headers from unscoped routes', async () => {
     setActiveWorkspaceId(WS);
     fetchMock.mockImplementation(async () => ok({}));

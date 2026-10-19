@@ -5,6 +5,8 @@ import {
   setRequestPolicy,
   getGetWorkspaceUrl, getListMembersUrl, getListInvitationsUrl,
   getGetConfigUrl, getPeekInvitationUrl,
+  getListProjectsUrl, getListWorkersUrl, getRecordWorkUrl, getListPaymentsUrl,
+  getListBalancesUrl, getRemoveAssignmentUrl,
 } from '@workspace/api-client-react';
 import { peekToken } from './sessionStore';
 import { ApiError, toApiError } from './api';
@@ -45,7 +47,11 @@ export function configureApiClient(): void {
     });
     const path = new URL(url).pathname;
     const workspacePath = getGetWorkspaceUrl();
-    const scoped = [workspacePath, getListMembersUrl(), getListInvitationsUrl()]
+    const scoped = [
+      workspacePath, getListMembersUrl(), getListInvitationsUrl(),
+      getListProjectsUrl(), getListWorkersUrl(), getRecordWorkUrl(), getListPaymentsUrl(),
+      getListBalancesUrl(), getRemoveAssignmentUrl('').replace(/\/$/, ''),
+    ]
       .some(root => path === root || path.startsWith(`${root}/`));
     // Never accept a caller-supplied workspace header on an unscoped operation.
     headers.delete('X-Workspace-Id');

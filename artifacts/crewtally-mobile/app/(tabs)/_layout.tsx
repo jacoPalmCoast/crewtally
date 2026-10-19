@@ -3,12 +3,14 @@ import { Platform } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { ProjectProvider } from '@/contexts/ProjectContext';
 
 export default function TabLayout() {
   const colors = useColors();
   const isWeb = Platform.OS === 'web';
 
   return (
+    <ProjectProvider>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
@@ -53,5 +55,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </ProjectProvider>
   );
 }
